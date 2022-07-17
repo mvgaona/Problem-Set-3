@@ -1,7 +1,7 @@
 # Valeria Gaona - 202214418
 # Andrea Beleño - 200620739
 
-#### PROBLEM SET 2 #####
+#### PROBLEM SET 3 #####
 
 install.packages("pacman") #Instalar librería si no cuenta con esta 
 library(pacman) #Llamar librería
@@ -35,10 +35,11 @@ rm(list = ls()) #Limpia las variables que existan al momento de correr el códig
 library(readr)
 #Se debe poner el directorio de donde está el script:
 #Session-> Set Working directory -> To source file location, para lo cual se debe descargar el repositorioDatos_test_hogares<-readRDS("../Elementos_Guardados/test_hogares.rds") #Guardar las bases de datos
-DTEST_P<-data.frame(readRDS("../Elementos_Guardados/test_personas.rds"))  #Guardar las bases de datos
-DTEST_H <- data.frame(readRDS("../Elementos_Guardados/test_hogares.rds"))
-DTRAIN_H<-data.frame(readRDS("../Elementos_Guardados/train_hogares.rds")) #Guardar las bases de datos
-DTRAIN_P<-data.frame(readRDS("../Elementos_Guardados/train_personas.rds"))
+DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds"))  #Guardar las bases de datos
+DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
+
+
+
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
 plot(hist(DTRAIN_H$Lp),main="Distribución Línea Pobreza, train Hogares",
