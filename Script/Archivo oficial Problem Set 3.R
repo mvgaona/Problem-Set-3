@@ -45,11 +45,21 @@ summary(DTEST)
 summary(DTRAIN)
 View(DTRAIN$description)
 tail(DTRAIN$description)
-require("tmaptools")
-point = geocode_OSM("Cra. 8 %23% 7-26, Bogotá", as.sf=T) 
-point
-
-
+#Creación variable Parqueadero para train y test
+Descripc_test<-DTEST$description
+parqueaderoT_aux1<-str_detect( Descripc_test,"parqueadero") 
+parqueaderoT_aux2<-str_detect( Descripc_test,"parqueaderos") 
+parqueaderoT_aux3<-str_detect( Descripc_test,"parqeadero") 
+parqueaderoT_aux4<-str_detect( Descripc_test,"parqeaderos") 
+parqueaderoT_aux5<-str_detect( Descripc_test,"garaje") 
+parqueaderoT_aux6<-str_detect( Descripc_test,"garajes") 
+parqueaderoT<-ifelse(parqueaderoT_aux1==TRUE|parqueaderoT_aux2==TRUE| parqueaderoT_aux3==TRUE|parqueaderoT_aux4==TRUE|parqueaderoT_aux5==TRUE|parqueaderoT_aux6==TRUE,1,0 )
+parqueaderoT<-data.frame(parqueaderoT)
+summary(parqueaderoT)
+parqueaderoT[is.na(parqueaderoT)] = 0
+summary(parqueaderoT)
+DTEST<- cbind(DTEST, parqueaderoT)
+rm(parqueaderoT)
 Descripc_train<-DTRAIN$description
 parqueadero_aux1<-str_detect( Descripc_train,"parqueadero") 
 parqueadero_aux2<-str_detect( Descripc_train,"parqueaderos") 
@@ -58,11 +68,68 @@ parqueadero_aux4<-str_detect( Descripc_train,"parqeaderos")
 parqueadero_aux5<-str_detect( Descripc_train,"garaje") 
 parqueadero_aux6<-str_detect( Descripc_train,"garajes") 
 
-parqueadero<-ifelse(parqueadero_aux1==TRUE|parqueadero_aux2==TRUE| parqueadero_aux3==TRUE|parqueadero_aux4==TRUE|parqueadero_aux5==TRUE|parqueadero_aux6==TRUE,1,0 )
-parqueadero<-data.frame(parqueadero)
-parqueadero[is.na(parqueadero)] = 1
-
-
+parqueaderoT<-ifelse(parqueadero_aux1==TRUE|parqueadero_aux2==TRUE| parqueadero_aux3==TRUE|parqueadero_aux4==TRUE|parqueadero_aux5==TRUE|parqueadero_aux6==TRUE,1,0 )
+parqueaderoT<-data.frame(parqueaderoT)
+summary(parqueaderoT)
+parqueaderoT[is.na(parqueaderoT)] = 0
+View(parqueaderoT)
+summary(parqueaderoT)
+DTRAIN <- cbind(DTRAIN, parqueaderoT)
+rm(parqueaderoT)
+#Creación variable  para train y test
+ascensorT_aux1<-str_detect( Descripc_test,"ascensor") 
+ascensorT_aux2<-str_detect( Descripc_test,"acensor") 
+ascensorT_aux3<-str_detect( Descripc_test,"asensor") 
+ascensorT_aux4<-str_detect( Descripc_test,"elevador") 
+ascensorT_aux5<-str_detect( Descripc_test,"ascensores") 
+ascensorT_aux6<-str_detect( Descripc_test,"acensores") 
+ascensorT_aux7<-str_detect( Descripc_test,"asensores") 
+ascensorT_aux8<-str_detect( Descripc_test,"elevadores") 
+ascensorT<-ifelse(ascensorT_aux1==TRUE|ascensorT_aux2==TRUE| ascensorT_aux3==TRUE|ascensorT_aux4==TRUE|ascensorT_aux5==TRUE|ascensorT_aux6==TRUE|ascensorT_aux7==TRUE|ascensorT_aux8==TRUE, 1,0 )
+ascensorT<-data.frame(ascensorT)
+summary(ascensorT)
+ascensorT[is.na(ascensorT)] = 0
+summary(ascensorT)
+DTEST <- cbind(DTEST, ascensorT)
+view(DTEST)
+rm(ascensorT)
+ascensor_aux1<-str_detect( Descripc_train,"ascensor") 
+ascensor_aux2<-str_detect( Descripc_train,"acensor") 
+ascensor_aux3<-str_detect( Descripc_train,"asensor") 
+ascensor_aux4<-str_detect( Descripc_train,"elevador")
+ascensor_aux5<-str_detect( Descripc_train,"ascensores") 
+ascensor_aux6<-str_detect( Descripc_train,"acensores") 
+ascensor_aux7<-str_detect( Descripc_train,"asensores") 
+ascensor_aux8<-str_detect( Descripc_train,"elevadores")
+ascensorT<-ifelse(ascensor_aux1==TRUE|ascensor_aux2==TRUE| ascensor_aux3==TRUE|ascensor_aux4==TRUE|ascensor_aux5==TRUE|ascensor_aux6==TRUE|ascensor_aux7==TRUE|ascensor_aux8==TRUE, 1,0 )
+ascensorT<-data.frame(ascensorT)
+summary(ascensorT)
+ascensorT[is.na(ascensorT)] = 0
+summary(ascensorT)
+DTRAIN <- cbind(DTRAIN, ascensorT)
+view(DTRAIN)
+rm(ascensorT)
+require("tmaptools")
+geocode_OSM("El poblado, Medellin") 
+point = geocode_OSM("El poblado, Medellin", as.sf=T) 
+point
+## la función addTiles adiciona la capa de OpenStreetMap
+leaflet() %>% addTiles() %>% addCircles(data=point)
+#Puede acceder a la lista de features disponibles en OSM aquí. En R puede obtener un vector con los nombres de los features usando la función available_features():
+available_features() %>% head(20)
+## obtener la caja de coordenada que contiene el polígono de Medellín
+opq(bbox = getbb("El poblado Medellin"))
+## objeto osm
+osm = opq(bbox = getbb("El poblado Medellin")) %>%
+  add_osm_feature(key="amenity" , value="bus_station") 
+class(osm)
+## extraer Simple Features Collection
+osm_sf = osm %>% osmdata_sf()
+osm_sf
+TransportePublico = osm_sf$osm_points %>% select(osm_id,amenity) 
+View(TransportePublico)
+## Pintar las transporte publicp
+leaflet() %>% addTiles() %>% addCircleMarkers(data=TransportePublico , col="red")
 ######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
