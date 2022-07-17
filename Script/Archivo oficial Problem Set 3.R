@@ -4,8 +4,7 @@
 #### PROBLEM SET 3 #####
 
 install.packages("pacman") #Instalar librería si no cuenta con esta 
-library(pacman) #Llamar librería
-#Se cargan las librerías a usar en el presente Problem Set
+library(pacman) #Llamar librería#Se cargan las librerías a usar en el presente Problem Set
 p_load(caret, 
        Matrix,
        recipes,
@@ -29,7 +28,11 @@ p_load(caret,
        recipes,
        glmnet,
        stargazer,
-       pROC)
+       pROC, 
+       sf,
+       leaflet,
+       tmaptools,
+       osmdata)
 rm(list = ls()) #Limpia las variables que existan al momento de correr el código
 ###Base de datos Problem set 2
 library(readr)
@@ -40,9 +43,11 @@ DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
 
 summary(DTEST)
 summary(DTRAIN)
-
-
-
+View(DTRAIN$description)
+tail(DTRAIN$description)
+require("tmaptools")
+point = geocode_OSM("Cra. 8 %23% 7-26, Bogotá", as.sf=T) 
+point
 ######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
