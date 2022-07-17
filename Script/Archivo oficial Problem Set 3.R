@@ -48,6 +48,21 @@ tail(DTRAIN$description)
 require("tmaptools")
 point = geocode_OSM("Cra. 8 %23% 7-26, Bogotá", as.sf=T) 
 point
+
+
+Descripc_train<-DTRAIN$description
+parqueadero_aux1<-str_detect( Descripc_train,"parqueadero") 
+parqueadero_aux2<-str_detect( Descripc_train,"parqueaderos") 
+parqueadero_aux3<-str_detect( Descripc_train,"parqeadero") 
+parqueadero_aux4<-str_detect( Descripc_train,"parqeaderos") 
+parqueadero_aux5<-str_detect( Descripc_train,"garaje") 
+parqueadero_aux6<-str_detect( Descripc_train,"garajes") 
+
+parqueadero<-ifelse(parqueadero_aux1==TRUE|parqueadero_aux2==TRUE| parqueadero_aux3==TRUE|parqueadero_aux4==TRUE|parqueadero_aux5==TRUE|parqueadero_aux6==TRUE,1,0 )
+parqueadero<-data.frame(parqueadero)
+parqueadero[is.na(parqueadero)] = 1
+
+
 ######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
