@@ -38,8 +38,12 @@ library(readr)
 DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds"))  #Guardar las bases de datos
 DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
 
+summary(DTEST)
+summary(DTRAIN)
 
 
+
+######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
 plot(hist(DTRAIN_H$Lp),main="Distribución Línea Pobreza, train Hogares",
