@@ -109,25 +109,69 @@ summary(ascensorT)
 DTRAIN <- cbind(DTRAIN, ascensorT)
 view(DTRAIN)
 rm(ascensorT)
+table(DTRAIN$l3)
+table(DTEST$l3)
+table(is.na(DTRAIN$surface_total))
+table(is.na(DTRAIN$surface_covered))
+DTRAIN[46,]
+DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+class(DTRAIN_sf) 
+#Para visualizar todas las observaciones en Bogotá y Medellín
+leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf)
+#Solo observaremos 1000
+leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf[1:1000,])
+#Buscar el poblado
 require("tmaptools")
 geocode_OSM("El poblado, Medellin") 
-point = geocode_OSM("El poblado, Medellin", as.sf=T) 
-point
+PointElPoblado = geocode_OSM("El poblado, Medellín", as.sf=T) 
+PointElPoblado
+PointChapinero = geocode_OSM("Chapinero, Bogotá", as.sf=T) 
+PointChapinero
+leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
+leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
 ## la función addTiles adiciona la capa de OpenStreetMap
-leaflet() %>% addTiles() %>% addCircles(data=point)
+leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
+leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
+#Atributos
 #Puede acceder a la lista de features disponibles en OSM aquí. En R puede obtener un vector con los nombres de los features usando la función available_features():
 available_features() %>% head(20)
 ## obtener la caja de coordenada que contiene el polígono de Medellín
 opq(bbox = getbb("El poblado Medellin"))
 ## objeto osm
 osm = opq(bbox = getbb("El poblado Medellin")) %>%
+  available_tags("amenity") %>% head(20)
+#Definiremos el área de búsqueda
+## obtener la caja de coordenada que contiene el polígono de Chapinero y El poblado
+opq(bbox = getbb("El Poblado Medellín"))
+opq(bbox = getbb("Chapinero Bogotá"))
+## objeto osm para extracción de amenity
+osmmed = opq(bbox = getbb(" Medellin")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
 class(osm)
-## extraer Simple Features Collection
-osm_sf = osm %>% osmdata_sf()
-osm_sf
-TransportePublico = osm_sf$osm_points %>% select(osm_id,amenity) 
-View(TransportePublico)
+class(osmmed)
+osmbog = opq(bbox = getbb(" Bogotá ")) %>%
+  add_osm_feature(key="amenity" , value="bus_station") 
+class(osmbog)
++osmmed_sf = osmmed %>% osmdata_sf()
+View(osmmed_sf)
+osmbog_sf = osmbog %>% osmdata_sf()
+View(osmbog_sf)
+Transporte_publicoMed = osmmed_sf$osm_points %>% select(osm_id,amenity) 
+View(Transporte_publicoMed)
+Transporte_publicoBog = osmbog_sf$osm_points %>% select(osm_id,amenity) 
+View(Transporte_publicoBog)
+## Pintar las transporte publico
+leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoMed , col="red")
+leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoBog, col="blue")
+p_load(rgdal)
+####INTENTO FALLIDO
+sp_mnz <- readOGR(dsn = ".", layer = "MNG_URB_MANZANA", integer64="allow.loss",stringsAsFactors = FALSE)
+## bares
+TPMed = opq(bbox = st_bbox("mnz"  )) %>%
+  add_osm_feature(key = "amenity", value = "bus_station") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+bar %>% head()
+DTRAIN_sf%>% head
 ## Pintar las transporte publicp
 leaflet() %>% addTiles() %>% addCircleMarkers(data=TransportePublico , col="red")
 ######
