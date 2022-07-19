@@ -167,13 +167,12 @@ p_load(rgdal)
 ####INTENTO FALLIDO
 sp_mnz <- readOGR(dsn = ".", layer = "MNG_URB_MANZANA", integer64="allow.loss",stringsAsFactors = FALSE)
 ## bares
-TPMed = opq(bbox = st_bbox("mnz"  )) %>%
-  add_osm_feature(key = "amenity", value = "bus_station") %>%
-  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
-bar %>% head()
-DTRAIN_sf%>% head
+#TPMed = opq(bbox = st_bbox("mnz"  )) %>%
+ # add_osm_feature(key = "amenity", value = "bus_station") %>%
+  #osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+#bar %>% head()
+#DTRAIN_sf%>% head
 ## Pintar las transporte publicp
-leaflet() %>% addTiles() %>% addCircleMarkers(data=TransportePublico , col="red")
 ######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
