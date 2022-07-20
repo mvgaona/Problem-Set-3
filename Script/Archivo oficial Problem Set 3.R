@@ -45,6 +45,12 @@ summary(DTEST)
 summary(DTRAIN)
 View(DTRAIN$description)
 tail(DTRAIN$description)
+DTRAIN$description<-str_to_lower(string=DTRAIN$description)
+DTRAIN$title<-str_to_lower(string=DTRAIN$title)
+View(DTRAIN)
+DTEST$description<-str_to_lower(string=DTEST$description)
+DTEST$title<-str_to_lower(string=DTEST$title)
+View(DTEST)
 #Creación variable Parqueadero para train y test
 Descripc_test<-DTEST$description
 parqueaderoT_aux1<-str_detect( Descripc_test,"parqueadero") 
@@ -109,6 +115,7 @@ summary(ascensorT)
 DTRAIN <- cbind(DTRAIN, ascensorT)
 view(DTRAIN)
 rm(ascensorT)
+
 table(DTRAIN$l3)
 table(DTEST$l3)
 table(is.na(DTRAIN$surface_total))
@@ -116,6 +123,7 @@ table(is.na(DTRAIN$surface_covered))
 DTRAIN[46,]
 DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 class(DTRAIN_sf) 
+
 #Para visualizar todas las observaciones en Bogotá y Medellín
 leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf)
 #Solo observaremos 1000
@@ -138,21 +146,17 @@ available_features() %>% head(20)
 ## obtener la caja de coordenada que contiene el polígono de Medellín
 opq(bbox = getbb("El poblado Medellin"))
 ## objeto osm
-osm = opq(bbox = getbb("El poblado Medellin")) %>%
-  available_tags("amenity") %>% head(20)
-#Definiremos el área de búsqueda
 ## obtener la caja de coordenada que contiene el polígono de Chapinero y El poblado
 opq(bbox = getbb("El Poblado Medellín"))
 opq(bbox = getbb("Chapinero Bogotá"))
 ## objeto osm para extracción de amenity
 osmmed = opq(bbox = getbb(" Medellin")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
-class(osm)
 class(osmmed)
 osmbog = opq(bbox = getbb(" Bogotá ")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
 class(osmbog)
-+osmmed_sf = osmmed %>% osmdata_sf()
+osmmed_sf = osmmed %>% osmdata_sf()
 View(osmmed_sf)
 osmbog_sf = osmbog %>% osmdata_sf()
 View(osmbog_sf)
@@ -167,10 +171,38 @@ p_load(rgdal)
 
 ##Extracción datos de manzanas
 
-Bogota<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
-Antioquia<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
+mnzBogota<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
+mnzAntioquia<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
+#Apartamentos
+rm(Aptos)
+Aptos <- cbind(DTRAIN$property_id , DTRAIN$lon , DTRAIN$lat)
+Aptos<- data.frame(Aptos)
+Aptos <- Aptos %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+CHAPINERO = getbb(place_name = "Chapinero Bogotá", 
+             featuretype = "amenity",
+             format_out = "sf_polygon")
+Poblado = getbb(place_name = "El Poblado Bogotá", 
+                  featuretype = "amenity",
+                  format_out = "sf_polygon")
 
-sp_mnz <- readOGR(dsn = ".", layer = "MNG_URB_MANZANA", integer64="allow.loss",stringsAsFactors = FALSE)
+#Bares Bogotá y Antioquia 
+barbog = opq(bbox = st_bbox(mnzBogota)) %>%
+  add_osm_feature(key = "amenity", value = "bar") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+barbog %>% head()
+barant = opq(bbox = st_bbox(mnzAntioquia)) %>%
+  add_osm_feature(key = "amenity", value = "bar") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+barant %>% head()
+#Visualizar info 
+leaflet() %>% addTiles() %>% 
+  addPolygons(data=mnzBogota) %>% # manzanas
+  addPolygons(data= CHAPINERO , col="green") %>%  # transportepub
+  addCircles(data= DTRAIN_sf , col="red", weight=2) %>% # apartamentos
+  addCircles(data=barbog , col="black" , weight=2)
+class(`house_points (1)`)
+class(Aptos)
+# bares
 ## bares
 #TPMed = opq(bbox = st_bbox("mnz"  )) %>%
  # add_osm_feature(key = "amenity", value = "bus_station") %>%
