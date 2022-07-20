@@ -37,7 +37,7 @@ rm(list = ls()) #Limpia las variables que existan al momento de correr el códig
 ###Base de datos Problem set 2
 library(readr)
 #Se debe poner el directorio de donde está el script:
-#Session-> Set Working directory -> To source file location, para lo cual se debe descargar el repositorioDatos_test_hogares<-readRDS("../Elementos_Guardados/test_hogares.rds") #Guardar las bases de datos
+#Session-> Set Working directory -> To source file location, para lo cual se debe descargar el repositorio DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds" #Guardar las bases de datos
 DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds"))  #Guardar las bases de datos
 DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
 
@@ -177,7 +177,12 @@ sp_mnz <- readOGR(dsn = ".", layer = "MNG_URB_MANZANA", integer64="allow.loss",s
   #osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
 #bar %>% head()
 #DTRAIN_sf%>% head
-## Pintar las transporte publicp
+## Pintar las transporte publico
+
+
+
+
+
 ######
 summary(DTRAIN_H$Lp)
 summary(DTEST_H$Lp)
