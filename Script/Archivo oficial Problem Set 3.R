@@ -164,7 +164,12 @@ View(Transporte_publicoBog)
 leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoMed , col="red")
 leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoBog, col="blue")
 p_load(rgdal)
-####INTENTO FALLIDO
+
+##Extracción datos de manzanas
+
+Bogota<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
+Antioquia<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
+
 sp_mnz <- readOGR(dsn = ".", layer = "MNG_URB_MANZANA", integer64="allow.loss",stringsAsFactors = FALSE)
 ## bares
 #TPMed = opq(bbox = st_bbox("mnz"  )) %>%
