@@ -40,9 +40,9 @@ library(readr)
 #Session-> Set Working directory -> To source file location, para lo cual se debe descargar el repositorio DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds" #Guardar las bases de datos
 DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds"))  #Guardar las bases de datos
 DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
-
+View(DTRAIN)
 summary(DTEST)
-summary(DTRAIN)
+summary(DTRAIN$description)
 View(DTRAIN$description)
 tail(DTRAIN$description)
 DTRAIN$description<-str_to_lower(string=DTRAIN$description)
@@ -51,6 +51,31 @@ View(DTRAIN)
 DTEST$description<-str_to_lower(string=DTEST$description)
 DTEST$title<-str_to_lower(string=DTEST$title)
 View(DTEST)
+#Filtrar por zonas Chapinero y El poblado
+x<-str_detect( DTRAIN$description,"chapinero")
+y<-str_detect( DTRAIN$description,"chapnero")
+z<-str_detect( DTRAIN$description,"chap")
+xx<-str_detect( DTRAIN$description,"poblado")
+yy<-str_detect( DTRAIN$description,"pobado")
+
+a<-str_detect( DTRAIN$title,"chapinero")
+b<-str_detect( DTRAIN$title,"chapnero")
+c<-str_detect( DTRAIN$title,"chap")
+aa<-str_detect( DTRAIN$title,"poblado")
+bb<-str_detect( DTRAIN$title,"pobado")
+x[is.na(x)] = 0
+y[is.na(y)] = 0
+z[is.na(z)] = 0
+xx[is.na(xx)] = 0
+yy[is.na(yy)] = 0
+a[is.na(a)] = 0
+b[is.na(b)] = 0
+c[is.na(c)] = 0
+aa[is.na(aa)] = 0
+bb[is.na(bb)] = 0
+DTRAIN<-DTRAIN%>% mutate(Chap_poblado=ifelse(x==TRUE|y==TRUE| z==TRUE|xx==TRUE|yy==TRUE|a==TRUE|b==TRUE|c==TRUE|aa==TRUE|bb==TRUE,1,0 ))
+DTRAIN_mapa<- DTRAIN[DTRAIN$Chap_poblado==1,]
+table(DTRAIN$Chap_poblado) 
 #Creación variable Parqueadero para train y test
 Descripc_test<-DTEST$description
 parqueaderoT_aux1<-str_detect( Descripc_test,"parqueadero") 
@@ -123,23 +148,36 @@ table(is.na(DTRAIN$surface_covered))
 DTRAIN[46,]
 DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 class(DTRAIN_sf) 
-
+DTRAIN_sf_mapa <-DTRAIN_mapa %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+class(DTRAIN_sf_mapa) 
+DTEST_sf <- DTEST %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 #Para visualizar todas las observaciones en Bogotá y Medellín
-leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf)
+leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf_mapa)
 #Solo observaremos 1000
 leaflet() %>% addTiles() %>% addCircleMarkers(data=DTRAIN_sf[1:1000,])
 #Buscar el poblado
 require("tmaptools")
 geocode_OSM("El poblado, Medellin") 
-PointElPoblado = geocode_OSM("El poblado, Medellín", as.sf=T) 
+PointElPoblado = geocode_OSM("Comuna 14 - El Poblado, Medellín", as.sf=T)  
 PointElPoblado
-PointChapinero = geocode_OSM("Chapinero, Bogotá", as.sf=T) 
+PointChapinero = geocode_OSM("UPZ Chapinero, Bogotá", as.sf=T) 
 PointChapinero
 leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
 leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
 ## la función addTiles adiciona la capa de OpenStreetMap
 leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
-leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
+#Poligono chapinero
+Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
+                   featuretype = "boundary:administrative", 
+                   format_out = "sf_polygon") %>% .$multipolygon
+leaflet() %>% addTiles() %>% addPolygons(data= Polchapinero, col = "blue")%>% 
+           addCircleMarkers(data=DTRAIN_sf_mapa, col= "red")
+#Poligono poblado
+PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
+                      featuretype = "boundary:administrative", 
+                      format_out = "sf_polygon") %>% .$multipolygon
+leaflet() %>% addTiles() %>% addPolygons(data= Poblado, col = "blue")%>% 
+  addCircleMarkers(data=DTRAIN_sf, col= "red")
 #Atributos
 #Puede acceder a la lista de features disponibles en OSM aquí. En R puede obtener un vector con los nombres de los features usando la función available_features():
 available_features() %>% head(20)
@@ -147,10 +185,10 @@ available_features() %>% head(20)
 opq(bbox = getbb("El poblado Medellin"))
 ## objeto osm
 ## obtener la caja de coordenada que contiene el polígono de Chapinero y El poblado
-opq(bbox = getbb("El Poblado Medellín"))
+cajaElpob <- opq(bbox = getbb("Comuna 14 - El Poblado Medellín"))
 opq(bbox = getbb("Chapinero Bogotá"))
 ## objeto osm para extracción de amenity
-osmmed = opq(bbox = getbb(" Medellin")) %>%
+osmmed = opq(bbox = getbb("Medellin")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
 class(osmmed)
 osmbog = opq(bbox = getbb(" Bogotá ")) %>%
@@ -166,22 +204,18 @@ Transporte_publicoBog = osmbog_sf$osm_points %>% select(osm_id,amenity)
 View(Transporte_publicoBog)
 ## Pintar las transporte publico
 leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoMed , col="red")
-leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoBog, col="blue")
+leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoBog, col="blue")%>% addPolygons(data= Polchapinero, col = "RED")
 p_load(rgdal)
 
 ##Extracción datos de manzanas
-
 mnzBogota<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
 mnzAntioquia<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
+
 #Apartamentos
-rm(Aptos)
-Aptos <- cbind(DTRAIN$property_id , DTRAIN$lon , DTRAIN$lat)
-Aptos<- data.frame(Aptos)
-Aptos <- Aptos %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 CHAPINERO = getbb(place_name = "Chapinero Bogotá", 
              featuretype = "amenity",
              format_out = "sf_polygon")
-Poblado = getbb(place_name = "El Poblado Bogotá", 
+Poblado = getbb(place_name = "Comuna 14 - El Poblado Medellin", 
                   featuretype = "amenity",
                   format_out = "sf_polygon")
 
@@ -200,8 +234,13 @@ leaflet() %>% addTiles() %>%
   addPolygons(data= CHAPINERO , col="green") %>%  # transportepub
   addCircles(data= DTRAIN_sf , col="red", weight=2) %>% # apartamentos
   addCircles(data=barbog , col="black" , weight=2)
-class(`house_points (1)`)
-class(Aptos)
+st_crs(mnzBogota) == st_crs(DTRAIN_sf)
+st_crs(mnzAntioquia) == st_crs(DTRAIN_sf)
+Uniondatbog = st_join(x=DTRAIN_sf , y=mnzBogota)
+Uniondatbog$dist_bar = st_distance(x=Uniondatbog , y=barbog)
+housing_p
+
+
 # bares
 ## bares
 #TPMed = opq(bbox = st_bbox("mnz"  )) %>%
