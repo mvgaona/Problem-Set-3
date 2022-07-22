@@ -193,11 +193,54 @@ DTRAIN$area_total<-str_replace_all(string = DTRAIN$area_total, pattern = "cuadra
 DTRAIN$area_total<-str_replace_all(string = DTRAIN$area_total, pattern = "\n" , replacement = "")
 
 DTRAIN$area_total<-as.numeric(DTRAIN$area_total)
-
+mnzBog<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Bogota.rds") #Datos de manzanas Bogotá
+mnzAnt<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Antioquia.rds") #Datos de manzanas Antioquia
+mnzBogota<-subset(mnzBog, select=c("MANZ_CCNCT", "geometry"))
+saveRDS(mnzBogota, file = "mnzBogotá.rds")
+mnzAntioquia<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
+saveRDS(mnzAntioquia, file = "mnzAntioquia.rds")
+DTRAIN_Bog<- DTRAIN_sf[DTRAIN_sf$l3=="Bogotá D.C",]
+DTRAIN_Med<- DTRAIN_sf[DTRAIN_sf$l3=="Medellín",]
+DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+#####
 new_area_aux<-cbind(DTRAIN$surface_total, DTRAIN$surface_covered)
 new_area_aux_2<-apply(new_area_aux, 1 , max)
 new_area_aux_2<-data.frame(new_area_aux_2)
+####
+DTRAIN_Bog<- DTRAIN_sf[DTRAIN_sf$l3=="Bogotá D.C",]
+View(DTRAIN_Bog)
+summary(DTRAIN_Bog)
+DTRAIN_Med<- DTRAIN_sf[DTRAIN_sf$l3=="Medellín",]
+require("tidyverse")
+require("sf")
+mnzBog$MANZ_CCNCT<-NULL
+mnzBog<-st_join(mnzBog,mnzBogota,join = st_intersects)
+sum(is.na(mnzBog$MANZ_CCNCT))
+sf::sf_use_s2(FALSE)
 
+mnzBogota<-st_transform(mnzBogota, 4326)
+
+DTRAIN_Bog<-DTRAIN_Bog %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+class(DTRAIN_Bog)
+st_crs(mnzBogota) == st_crs(DTRAIN_Bog)
+leaflet() %>% addTiles() %>% addPolygons(data=mnzBog , color="red") %>% addCircles(data=DTRAIN_Bog)
+Casa_mnz = st_join(x = DTRAIN_Bog,y = mnzBog)
+colnames(Casa_mnz)
+Casa_mnz = Casa_mnz %>%
+  group_by(MANZ_CCNCT) %>%
+  mutate(new_surface_2=median(surface_total,na.rm=T))
+table(is.na(Casa_mnz$new_surface_2))
+table(is.na(Casa_mnz$surface_total),
+      is.na(Casa_mnz$new_surface_2))
+Casa_buf = st_buffer(DTRAIN_Bog,dist=20)
+leaflet() %>% addTiles() %>% addPolygons(data=Casa_buf , color="red") %>% addCircles(data=DTRAIN_Bog)
+Casa_buf = st_join(Casa_buf,DTRAIN_Bog[,"surface_total"])
+
+st_geometry(Casa_buf) = NULL
+Casa_buf_mean = Casa_buf %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
+
+Casa_mnz = left_join(Casa_mnz,Casa_buf_mean,"property_id")
+######
 mnzBog<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
 mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
 
@@ -334,6 +377,135 @@ DTRAIN$banio_tot<-str_replace_all(string = DTRAIN$banio_tot, pattern = "bañios"
 DTRAIN$banio_tot<-str_replace_all(string = DTRAIN$banio_tot, pattern = "bao" , replacement = "")
 DTRAIN$banio_tot<-str_replace_all(string = DTRAIN$banio_tot, pattern = "baos" , replacement = "")
 DTRAINbanio_tot<-str_replace_all(string = DTRAIN$banio_tot, pattern = "\n" , replacement = "")
+DTRAIN$banio_tot<-as.numeric(DTRAIN$banio_tot)
+View(DTRAIN)
+DTRAIN$banio_tot[is.na(DTRAIN$banio_tot)] = 1
+summary(DTRAIN$banio_tot) 
+DTRAIN$bathrooms[is.na(DTRAIN$bathrooms)] = 1
+new_banio_aux<-cbind(DTRAIN$bathrooms, DTRAIN$banio_tot)
+View(new_banio_aux)
+baniostot<-apply(new_banio_aux, 1 , max)
+baniostot<-data.frame(baniostot)
+View(baniostot)
+summary(baniostot)
+View(DTRAIN)
+DTRAIN<- cbind(DTRAIN, baniostot)
+View(DTRAIN)
+View(DTRAIN)
+rm(baniostot)
+#TEST BAÑOS
+DTEST <- DTEST  %>% 
+  mutate(banio_tot= str_extract(string=DTEST$description , pattern= paste0(pat_1b,"|",pat_2b,"|", pat_3b,"|", pat_4b,"|", pat_5b,"|", pat_6b,"|", pat_7b,"|", pat_8b,"|", pat_9b,"|", pat_10b,"|", pat_11b,"|", pat_12b,"|", pat_13b,"|", pat_14b,"|", pat_15b,"|", pat_16b,"|", pat_17b,"|", pat_18b,"|", pat_19b,"|", pat_20b,"|", pat_21b,"|", pat_22b,"|", pat_23b,"|", pat_24b,"|", pat_25b,"|", pat_26b,"|", pat_27b,"|", pat_28b,"|", pat_29b,"|", pat_30b,"|", pat_31b,"|", pat_32b,"|", pat_33b,"|", pat_34b,"|", pat_35b,"|", pat_36b,"|", pat_37b,"|", pat_38b,"|", pat_39b,"|", pat_40b,"|", pat_41b,"|", pat_42b,"|", pat_43b,"|", pat_44b,"|", pat_45b,"|", pat_46b,"|", pat_47b) ))
+
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "," , replacement = ".")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "baño" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "baños" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "banio" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "banios" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "bano" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "banos" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vano" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vanos" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vanio" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vanios" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vaño" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "vaños" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "bañio" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "bañios" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "bao" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "baos" , replacement = "")
+DTEST$banio_tot<-str_replace_all(string = DTEST$banio_tot, pattern = "\n" , replacement = "")
+DTEST$banio_tot<-as.numeric(DTEST$banio_tot)
+View(DTEST)
+DTEST$banio_tot[is.na(DTEST$banio_tot)] = 1
+summary(DTEST$banio_tot) 
+DTEST$bathrooms[is.na(DTEST$bathrooms)] = 1
+new_banio_auxT<-cbind(DTEST$bathrooms, DTEST$banio_tot)
+View(new_banio_auxT)
+baniostot<-apply(new_banio_auxT, 1 , max)
+baniostot<-data.frame(baniostot)
+View(baniostot)
+summary(baniostot)
+View(DTRAIN)
+DTEST<- cbind(DTEST, baniostot)
+View(DTEST)
+View(DTRAIN)
+rm(baniostot)
+#Limpieza Rooms
+#TRAIN
+DTRAIN$rooms[is.na(DTRAIN$rooms)] = 1
+summary(DTRAIN$rooms)
+habitaciones_aux<-cbind(DTRAIN$rooms, DTRAIN$bedrooms)
+View(habitaciones_aux)
+habitaciones<-apply(habitaciones_aux, 1 , max)
+habitaciones<- data.frame(habitaciones)
+View(habitaciones)
+summary(habitaciones)
+View(DTRAIN)
+DTRAIN<- cbind(DTRAIN,habitaciones)
+View(DTRAIN)
+rm(habitaciones)
+#test
+summary(DTEST$rooms)
+DTEST$rooms[is.na(DTEST$rooms)] = 1
+summary(DTEST$rooms)
+habitaciones_auxT<-cbind(DTEST$rooms, DTEST$bedrooms)
+View(habitaciones_auxT)
+habitaciones<-apply(habitaciones_auxT, 1 , max)
+habitaciones<- data.frame(habitaciones)
+View(habitaciones)
+summary(habitaciones)
+View(DTEST)
+DTEST<- cbind(DTEST,habitaciones)
+View(DTEST)
+rm(habitaciones)
+####Descripción de variables 
+#Habitaciones
+habitaciones <- data.frame(DTRAIN$habitaciones) 
+class(DTRAIN$habitaciones)
+plot(hist(DTRAIN$habitaciones),col = "black", main="Histograma No. de habitaciones de la vivienda",
+     xlab="Habitaciones",
+     ylab="Frecuencia")
+min(DTRAIN$habitaciones)
+max(DTRAIN$habitaciones)
+mean(DTRAIN$habitaciones)
+modehabitaciones <- function(habitaciones){
+  return(as.numeric(names(which.max(table(habitaciones)))))}
+modehabitaciones(habitaciones)
+summary(habitaciones)
+rm(habitaciones)
+#Descripción baños
+baños <- as.numeric(DTRAIN$baniostot) 
+class(baños)
+plot(hist(baños),col = "red", main="Histograma No. de baños de la vivienda",
+     xlab="Habitaciones",
+     ylab="Frecuencia")
+min(baños)
+max(baños)
+mean(baños)
+modebaños<- function(baños){
+  return(as.numeric(names(which.max(table(baños)))))}
+modebaños(baños)
+summary(baños)
+rm(baños)
+#Ascensor
+Ascensor <- as.factor(DTRAIN$ascensorT)
+class(Ascensor)
+skim(Ascensor)
+Ascensor <- factor(Ascensor, labels = c("1", "0"))
+summary(Ascensor)
+rm(Ascensor)
+#Parqueadero
+Parqueadero <- as.factor(DTRAIN$parqueaderoT)
+class(Parqueadero)
+Parqueadero <- factor(Parqueadero, labels = c("1", "0"))
+summary(Parqueadero)
+rm(Parqueadero)
+#Tipo inmueble
+TipoVivienda <- as.factor(DTRAIN$property_type)
+class(TipoVivienda)
+summary(TipoVivienda)
+rm(TipoVivienda)
 
 
 
