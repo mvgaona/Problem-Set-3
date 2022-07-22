@@ -249,6 +249,10 @@ Distancia_cercana_Med<-c(1:nrow(DTRAIN_Med_NA))
 for (i in 1:nrow(DTRAIN_Med_NA)){ #Realizar la distancia mínima para los NAs
   Distancia_cercana_Med[i]<-st_nn(DTRAIN_Med_NA[i,], mnzAntioquia, k = 1, maxdist = 50, progress=FALSE)
 }
+
+Distancia_cercana_Med<-st_nn(DTRAIN_Med_NA, mnzAntioquia, k = 1, maxdist = 50, progress=FALSE) #Para hacerlo sin el For, a ver si demora menos
+
+
 saveRDS(Distancia_cercana_Med, file = "../Elementos_Guardados/Manzanas_Med_NA.rds")
 #Para Test
 
