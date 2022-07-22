@@ -238,7 +238,19 @@ Distancia_cercana<-c(1:nrow(DTRAIN_Bog_NA))
 for (i in 1:nrow(DTRAIN_Bog_NA)){ #Realizar la distancia mínima para los NAs
   Distancia_cercana[i]<-st_nn(DTRAIN_Bog_NA[i,], mnzBogota, k = 1, maxdist = 50, progress=TRUE)
 }
+saveRDS(Distancia_cercana, file = "../Elementos_Guardados/Manzanas_Bogota_NA.rds")
+#Para Medellín
+DTRAIN_Med<-DTRAIN_Med %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+st_crs(mnzAntioquia) == st_crs(DTRAIN_Med)
+Casa_mnz_Med = st_join(x = DTRAIN_Med,y = mnzAntioquia)
+DTRAIN_Med_NA<-Casa_mnz[is.na(Casa_mnz_Med$MANZ_CCNCT),]
 
+Distancia_cercana_Med<-c(1:nrow(DTRAIN_Med_NA))
+for (i in 1:nrow(DTRAIN_Med_NA)){ #Realizar la distancia mínima para los NAs
+  Distancia_cercana_Med[i]<-st_nn(DTRAIN_Med_NA[i,], mnzAntioquia, k = 1, maxdist = 50, progress=FALSE)
+}
+saveRDS(Distancia_cercana_Med, file = "../Elementos_Guardados/Manzanas_Med_NA.rds")
+#Para Test
 
 colnames(Casa_mnz)
 Casa_mnz = Casa_mnz %>%
