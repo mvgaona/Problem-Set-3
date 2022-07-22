@@ -239,7 +239,7 @@ for (i in 1:nrow(DTRAIN_Bog_NA)){ #Realizar la distancia mínima para los NAs
   Distancia_cercana[i]<-st_nn(DTRAIN_Bog_NA[i,], mnzBogota, k = 1, maxdist = 50, progress=TRUE)
 }
 saveRDS(Distancia_cercana, file = "../Elementos_Guardados/Manzanas_Bogota_NA.rds")
-#Para Medellín
+#Para Medellín#Para Medellin correr
 DTRAIN_Med<-DTRAIN_Med %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 st_crs(mnzAntioquia) == st_crs(DTRAIN_Med)
 Casa_mnz_Med = st_join(x = DTRAIN_Med,y = mnzAntioquia)
