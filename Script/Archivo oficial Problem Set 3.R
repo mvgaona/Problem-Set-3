@@ -193,15 +193,16 @@ DTRAIN$area_total<-str_replace_all(string = DTRAIN$area_total, pattern = "cuadra
 DTRAIN$area_total<-str_replace_all(string = DTRAIN$area_total, pattern = "\n" , replacement = "")
 
 DTRAIN$area_total<-as.numeric(DTRAIN$area_total)
-mnzBog<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Bogota.rds") #Datos de manzanas Bogotá
-mnzAnt<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Antioquia.rds") #Datos de manzanas Antioquia
+mnzBog<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
+mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
 mnzBogota<-subset(mnzBog, select=c("MANZ_CCNCT", "geometry"))
 saveRDS(mnzBogota, file = "mnzBogotá.rds")
 mnzAntioquia<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
 saveRDS(mnzAntioquia, file = "mnzAntioquia.rds")
+DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 DTRAIN_Bog<- DTRAIN_sf[DTRAIN_sf$l3=="Bogotá D.C",]
 DTRAIN_Med<- DTRAIN_sf[DTRAIN_sf$l3=="Medellín",]
-DTRAIN_sf <- DTRAIN %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
 #####
 new_area_aux<-cbind(DTRAIN$surface_total, DTRAIN$surface_covered)
 new_area_aux_2<-apply(new_area_aux, 1 , max)
