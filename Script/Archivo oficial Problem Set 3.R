@@ -226,6 +226,20 @@ class(DTRAIN_Bog)
 st_crs(mnzBogota) == st_crs(DTRAIN_Bog)
 leaflet() %>% addTiles() %>% addPolygons(data=mnzBog , color="red") %>% addCircles(data=DTRAIN_Bog)
 Casa_mnz = st_join(x = DTRAIN_Bog,y = mnzBog)
+DTRAIN_Bog_NA<-Casa_mnz[is.na(Casa_mnz$MANZ_CCNCT),]
+
+#Se crea vector para tener los datos de las filas de las manzanas más cercanas a los NA
+Distancia_cercana<-c(1:nrow(DTRAIN_Bog_NA))
+
+#Distancia_cercana<-st_nn(DTRAIN_Bog_NA, mnzBogota, k = 1, maxdist = 50, progress=TRUE)
+
+#Se realiza un for para que se haga la función st_nn para cada dato de apartamentos con NA y se compara con las manzanas Bogotá
+#Se demora mucho este proceso
+for (i in 1:nrow(DTRAIN_Bog_NA)){ #Realizar la distancia mínima para los NAs
+  Distancia_cercana[i]<-st_nn(DTRAIN_Bog_NA[i,], mnzBogota, k = 1, maxdist = 50, progress=TRUE)
+}
+
+
 colnames(Casa_mnz)
 Casa_mnz = Casa_mnz %>%
   group_by(MANZ_CCNCT) %>%
@@ -259,7 +273,7 @@ DTRAIN_Bog<-DTRAIN_Bog %>% st_as_sf(coords = c("lon", "lat"), crs = 4326)
 
 st_crs(mnzBogota) == st_crs(DTRAIN_Bog)
 
-Casa_mnz_aux<- st_join(DTRAIN_Bog,mnzBogota,join = nngeo::st_nn, maxdist = 50, k = 1, progress = FALSE)
+Casa_mnz_aux<- st_join(DTRAIN_Bog,mnzBogota,join = nngeo::st_nn, maxdist = 50, k = 1, progress = TRUE)
 
 
 Casa_mnz_aux2 = st_join(DTRAIN_Med,mnzAntioquia, join = nngeo::st_nn, maxdist = 50, k = 1, progress = FALSE)
