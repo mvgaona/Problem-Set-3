@@ -64,6 +64,7 @@ DTEST$description <- gsub("\\s+", " ", str_trim(DTEST$description))
 train<- DTRAIN %>% mutate(base = "train")
 test <- DTEST %>% mutate(base="test")
 HOUSE<- bind_rows(train,test) %>% st_as_sf(coords=c("lon","lat"),crs=4326)
+class(HOUSE)
 leaflet() %>% addTiles() %>% addCircles(data = HOUSE)
 str(HOUSE)
 Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
@@ -72,51 +73,57 @@ Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota",
 leaflet() %>% addTiles() %>% addPolygons(data= Polchapinero, col = "red")
 st_crs(HOUSE)
 st_crs(Polchapinero)
+
+
+####
 Polchapinero <- st_transform(Polchapinero, st_crs(HOUSE))
 House_Chapinero<- HOUSE[Polchapinero,]
-
 leaflet() %>% addTiles() %>% addCircles(data = House_Chapinero, color = "red" ) %>% addPolygons(data= Polchapinero, col = "blue")
 available_features()
 available_tags("amenity")
+####
 mnzBog<-readRDS("../Elementos_Guardados/Bogota.rds") #Datos de manzanas Bogotá
 sf_use_s2(FALSE)
 mnzBogota<-subset(mnzBog, select=c("MANZ_CCNCT", "geometry"))
-
+####
 mnz_chap <- mnzBogota[Polchapinero,]
 leaflet() %>% addTiles() %>% addCircles(data = House_Chapinero, color = "red" ) %>% addPolygons(data= mnz_chap, col = "blue")
-house_chapinero_mnz <- st_join(House_Chapinero, mnz_chap)
+#house_chapinero_mnz <- st_join(House_Chapinero, mnz_chap)
 colnames(house_chapinero_mnz)
-table(is.na(house_chapinero_mnz$MANZ_CCNCT))
-db_1 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==F)
-db_2 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+####
+HOUSE_Bog<- HOUSE[HOUSE$l3=="Bogotá D.C",]
+House_BOG_mnz<- st_join(HOUSE_Bog, mnzBogota)
+table(is.na(House_BOG_mnz$MANZ_CCNCT))
+db_1 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==F)
+db_2 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 leaflet() %>% addTiles() %>% addPolygons(data=db_2[1,] %>% st_buffer(dist = 0.0005))
 db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnzBogota)%>% subset(duplicated(property_id)==F)
 
 
-filtro<-is.na(house_chapinero_mnz$MANZ_CCNCT)
-house_chapinero_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
-table(is.na(house_chapinero_mnz$MANZ_CCNCT))
+filtro<-is.na(House_BOG_mnz$MANZ_CCNCT)
+House_BOG_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
+table(is.na(House_BOG_mnz$MANZ_CCNCT))
 
-house_chapinero_mnz <-  house_chapinero_mnz %>%
+House_BOG_mnz <-  House_BOG_mnz %>%
   group_by(MANZ_CCNCT) %>%
   mutate(new_surface_2=median(surface_total,na.rm=T))
 
-table(is.na( house_chapinero_mnz$new_surface_2))
+table(is.na( House_BOG_mnz$new_surface_2))
 
-house_buf_Bog <- st_buffer(house_chapinero_mnz,dist=0.005)
+house_buf_Bog <- st_buffer(House_BOG_mnz,dist=0.005)
 
-leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=house_chapinero_mnz)
+leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=House_BOG_mnz)
 
-house_buf_Bog<- st_join(house_buf_Bog,house_chapinero_mnz[,"surface_total"])
-
+house_buf_Bog<- st_join(house_buf_Bog,House_BOG_mnz[,"surface_total"])
+exportRDS(house_buf_Bog, "house_buf_Bog.rds")
 st_geometry(house_buf_Bog) = NULL
 
 house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
 
-house_chapinero_mnz<- left_join(house_chapinero_mnz,house_buf_mean_Bog,"property_id")
+House_BOG_mnz<- left_join(House_BOG_mnz,house_buf_mean_Bog,"property_id")
 
-table(is.na( house_chapinero_mnz$new_surface_2))
-table(is.na( house_chapinero_mnz$surface_new_3))
+table(is.na( House_BOG_mnz$new_surface_2))
+table(is.na( House_BOG_mnz$surface_new_3))
 
 rm(house_buf_Bog, house_buf_mean_Bog)
 
@@ -129,15 +136,19 @@ leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")
 PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
 House_Poblado<- HOUSE[PolPoblado,]
 available_features()
-available_tags("amenity")
+available_tags("amenity") 
 mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
 sf_use_s2(FALSE)
 mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
 mnz_pob <- mnzMedellin[PolPoblado,]
 
 leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
+###
 house_pob_mnz <- st_join(House_Poblado, mnz_pob)
 colnames(house_pob_mnz)
+####
+HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
+house_pob_mnz <- st_join(HOUSE_Med, mnzMedellin)
 table(is.na(house_pob_mnz$MANZ_CCNCT))
 db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
 db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
@@ -170,9 +181,11 @@ house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
 table(is.na( house_pob_mnz$new_surface_2))
 table(is.na( house_pob_mnz$surface_new_3))
 class(house_pob_mnz)
-HOUSEOF<- rbind.data.frame(house_pob_mnz, house_chapinero_mnz)
+HOUSEOF<- rbind.data.frame(house_pob_mnz, House_BOG_mnz)
 view(HOUSEOF)
 table(is.na( HOUSEOF$surface_new_3))
+table(HOUSEOF$base)
+
 #CREACIÓN VARIABLES POR MEDIO DE DESCRIPCIÓN PARA BASE DE DATOS
 Descripc<-HOUSEOF$description
 parqueaderoT_aux1<-str_detect( Descripc,"parqueadero") 
