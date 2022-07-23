@@ -32,6 +32,7 @@ p_load(caret,
        sf,
        leaflet,
        tmaptools,
+       class,
        nngeo,
        osmdata)
 rm(list = ls()) #Limpia las variables que existan al momento de correr el código
@@ -88,23 +89,28 @@ filtro<-is.na(house_chapinero_mnz$MANZ_CCNCT)
 house_chapinero_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
 table(is.na(house_chapinero_mnz$MANZ_CCNCT))
 
+house_chapinero_mnz <-  house_chapinero_mnz %>%
+  group_by(MANZ_CCNCT) %>%
+  mutate(new_surface_2=median(surface_total,na.rm=T))
 
+table(is.na( house_chapinero_mnz$new_surface_2))
 
-#MANNZ
-table(is.na(db_2$MANZ_CCNCT.y))
-db2_NA_Bog<-db_2%>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+house_buf_Bog <- st_buffer(house_chapinero_mnz,dist=0.005)
 
-db_2<-db_2%>% st_as_sf(coords=c("lon","lat"),crs=4326)
+leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=house_chapinero_mnz)
 
+house_buf_Bog<- st_join(house_buf_Bog,house_chapinero_mnz[,"surface_total"])
 
-leaflet() %>% addTiles() %>% addCircles(data = db_2, color = "red" ) %>% addPolygons(data= mnzBogota, col = "blue")
+st_geometry(house_buf_Bog) = NULL
 
-#fALTA PASAR LA INFO DE DF_2 A HOUSE
+house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
 
+house_chapinero_mnz<- left_join(house_chapinero_mnz,house_buf_mean_Bog,"property_id")
 
- ifelse(house_chapinero_mnz$property_id==db_2$property_id, house_chapinero_mnz$MANZ_CCNCT<-db_2$MANZ_CCNCT, house_chapinero_mnz$MANZ_CCNCT<-house_chapinero_mnz$MANZ_CCNCT) 
+table(is.na( house_chapinero_mnz$new_surface_2))
+table(is.na( house_chapinero_mnz$surface_new_3))
 
-
+rm(house_buf_Bog, house_buf_mean_Bog)
 
 #Para Medellín
 PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
@@ -116,10 +122,11 @@ PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
 House_Poblado<- HOUSE[PolPoblado,]
 available_features()
 available_tags("amenity")
-mnzAnt<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Antioquia.rds") #Datos de manzanas Antioquia
+mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
 sf_use_s2(FALSE)
 mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
 mnz_pob <- mnzMedellin[PolPoblado,]
+
 leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
 house_pob_mnz <- st_join(House_Poblado, mnz_pob)
 colnames(house_pob_mnz)
@@ -127,71 +134,33 @@ table(is.na(house_pob_mnz$MANZ_CCNCT))
 db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
 db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 leaflet() %>% addTiles() %>% addPolygons(data=db_2M[1,] %>% st_buffer(dist = 0.0005))
-db_2M <- st_join(st_buffer(db_2M, dist = 0.0005), mnz_pob)%>% subset(duplicated(property_id)==F)
+db_2M <- st_join(st_buffer(db_2M, dist = 0.0009), mnzMedellin)%>% subset(duplicated(property_id)==F)
 table(is.na(db_2M$MANZ_CCNCT))
-db2M_NA_Med<-db_2M[is.na(db_2M$MANZ_CCNCT),]
-Distancia_cercana_mnzMed<-st_nn(db2M_NA_Med, mnzMedellin, k = 1, maxdist =  0.0005, progress=TRUE)
 
+filtro_Med<-is.na(house_pob_mnz$MANZ_CCNCT)
+house_pob_mnz$MANZ_CCNCT[filtro_Med]<-db_2M$MANZ_CCNCT
+table(is.na(house_pob_mnz$MANZ_CCNCT))
 
-
-
-
-
-
-Distancia_cercana_mnzBog<-c(1:nrow(db2_NA_Bog))
-for (i in 1:nrow(db2_NA_Bog)){ #Realizar la distancia mínima para los NAs
-  Distancia_cercana_mnzBog[i]<-st_nn(db2_NA_Bog[i,], mnzBogota, k = 1, maxdist = 0.0005, progress=TRUE)
-}
-#Para preguntar a Eduard
-Distancia_cercana_mnzBog<-st_join(db2_NA_Bog, mnzBogota, join = st_nn , maxdist = 0.0005 , k = 1 , progress = FALSE)
-
-Distancia_cercana_mnzBog<-st_nn(db2_NA_Bog, mnz_chap, k = 1, maxdist = 10, progress=TRUE) 
-
-db_2_aux_Bog<-subset(db_2, select=c("property_id","MANZ_CCNCT"))
-
-
-
-
-
-
-house_chapinero_mnz <-  house_chapinero_mnz %>%
+house_pob_mnz <-  house_pob_mnz %>%
   group_by(MANZ_CCNCT) %>%
   mutate(new_surface_2=median(surface_total,na.rm=T))
 
+table(is.na( house_pob_mnz$new_surface_2))
 
-table(is.na( house_chapinero_mnz$new_surface_2))
-table(is.na(house_chapinero_mnz$surface_total),
-      is.na( house_chapinero_mnz$new_surface_2))
+house_buf_Med <- st_buffer(house_pob_mnz,dist=0.01)
 
+leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
 
+house_buf_Med<- st_join(house_buf_Med,house_pob_mnz[,"surface_total"])
 
+st_geometry(house_buf_Med) = NULL
 
+house_buf_mean_Med <-house_buf_Med %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
 
+house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+table(is.na( house_pob_mnz$new_surface_2))
+table(is.na( house_pob_mnz$surface_new_3))
 
 
 
