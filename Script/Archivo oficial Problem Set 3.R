@@ -81,19 +81,69 @@ table(is.na(house_chapinero_mnz$MANZ_CCNCT))
 db_1 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==F)
 db_2 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 leaflet() %>% addTiles() %>% addPolygons(data=db_2[1,] %>% st_buffer(dist = 0.0005))
-db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnz_chap)%>% subset(duplicated(property_id)==F)
+db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnzBogota)%>% subset(duplicated(property_id)==F)
+
+
+filtro<-is.na(house_chapinero_mnz$MANZ_CCNCT)
+house_chapinero_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
+table(is.na(house_chapinero_mnz$MANZ_CCNCT))
+
+
 
 #MANNZ
 table(is.na(db_2$MANZ_CCNCT.y))
-db2_NA_Bog<-db_2[is.na(db_2$MANZ_CCNCT),]
+db2_NA_Bog<-db_2%>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 
-db2_NA_Bog<-db2_NA_Bog%>% st_as_sf(coords=c("lon","lat"),crs=4326)
+db_2<-db_2%>% st_as_sf(coords=c("lon","lat"),crs=4326)
 
 
-leaflet() %>% addTiles() %>% addCircles(data = db_2, color = "red" ) %>% addPolygons(data= mnz_chap, col = "blue")
+leaflet() %>% addTiles() %>% addCircles(data = db_2, color = "red" ) %>% addPolygons(data= mnzBogota, col = "blue")
 
+#fALTA PASAR LA INFO DE DF_2 A HOUSE
+
+
+ ifelse(house_chapinero_mnz$property_id==db_2$property_id, house_chapinero_mnz$MANZ_CCNCT<-db_2$MANZ_CCNCT, house_chapinero_mnz$MANZ_CCNCT<-house_chapinero_mnz$MANZ_CCNCT) 
+
+
+
+#Para Medellín
+PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
+                    featuretype = "boundary:administrative", 
+                    format_out = "sf_polygon") 
+
+leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")
+PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
+House_Poblado<- HOUSE[PolPoblado,]
+available_features()
+available_tags("amenity")
+mnzAnt<-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/Antioquia.rds") #Datos de manzanas Antioquia
+sf_use_s2(FALSE)
+mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
+mnz_pob <- mnzMedellin[PolPoblado,]
+leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
+house_pob_mnz <- st_join(House_Poblado, mnz_pob)
+colnames(house_pob_mnz)
+table(is.na(house_pob_mnz$MANZ_CCNCT))
+db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
+db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+leaflet() %>% addTiles() %>% addPolygons(data=db_2M[1,] %>% st_buffer(dist = 0.0005))
+db_2M <- st_join(st_buffer(db_2M, dist = 0.0005), mnz_pob)%>% subset(duplicated(property_id)==F)
+table(is.na(db_2M$MANZ_CCNCT))
+db2M_NA_Med<-db_2M[is.na(db_2M$MANZ_CCNCT),]
+Distancia_cercana_mnzMed<-st_nn(db2M_NA_Med, mnzMedellin, k = 1, maxdist =  0.0005, progress=TRUE)
+
+
+
+
+
+
+
+Distancia_cercana_mnzBog<-c(1:nrow(db2_NA_Bog))
+for (i in 1:nrow(db2_NA_Bog)){ #Realizar la distancia mínima para los NAs
+  Distancia_cercana_mnzBog[i]<-st_nn(db2_NA_Bog[i,], mnzBogota, k = 1, maxdist = 0.0005, progress=TRUE)
+}
 #Para preguntar a Eduard
-Distancia_cercana_mnzBog<-st_join(db2_NA_Bog, mnz_chap, join = st_nn , maxdist = 0.0005 , k = 1 , progress = FALSE)
+Distancia_cercana_mnzBog<-st_join(db2_NA_Bog, mnzBogota, join = st_nn , maxdist = 0.0005 , k = 1 , progress = FALSE)
 
 Distancia_cercana_mnzBog<-st_nn(db2_NA_Bog, mnz_chap, k = 1, maxdist = 10, progress=TRUE) 
 
