@@ -92,7 +92,6 @@ leaflet() %>% addTiles() %>% addCircles(data = House_Chapinero, color = "red" ) 
 colnames(house_chapinero_mnz)
 ####
 HOUSE_Bog<- HOUSE[HOUSE$l3=="Bogotá D.C",]
-HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
 House_BOG_mnz<- st_join(HOUSE_Bog, mnzBogota)
 table(is.na(House_BOG_mnz$MANZ_CCNCT))
 db_1 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==F)
@@ -116,7 +115,7 @@ house_buf_Bog <- st_buffer(House_BOG_mnz,dist=0.005)
 leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=House_BOG_mnz)
 
 house_buf_Bog<- st_join(house_buf_Bog,House_BOG_mnz[,"surface_total"])
-
+exportRDS(house_buf_Bog, "house_buf_Bog.rds")
 st_geometry(house_buf_Bog) = NULL
 
 house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
@@ -144,8 +143,12 @@ mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
 mnz_pob <- mnzMedellin[PolPoblado,]
 
 leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
+###
 house_pob_mnz <- st_join(House_Poblado, mnz_pob)
 colnames(house_pob_mnz)
+####
+HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
+house_pob_mnz <- st_join(HOUSE_Med, mnzMedellin)
 table(is.na(house_pob_mnz$MANZ_CCNCT))
 db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
 db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
@@ -178,7 +181,7 @@ house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
 table(is.na( house_pob_mnz$new_surface_2))
 table(is.na( house_pob_mnz$surface_new_3))
 class(house_pob_mnz)
-HOUSEOF<- rbind.data.frame(house_pob_mnz, house_chapinero_mnz)
+HOUSEOF<- rbind.data.frame(house_pob_mnz, House_BOG_mnz)
 view(HOUSEOF)
 table(is.na( HOUSEOF$surface_new_3))
 table(HOUSEOF$base)
