@@ -1,4 +1,4 @@
-#####SuperLerner
+#####SuperLearner
 require("tidyverse")
 require("ranger")
 require("SuperLearner")
