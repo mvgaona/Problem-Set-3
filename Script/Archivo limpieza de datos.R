@@ -169,7 +169,10 @@ house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
 
 table(is.na( house_pob_mnz$new_surface_2))
 table(is.na( house_pob_mnz$surface_new_3))
-
+class(house_pob_mnz)
+HOUSEOF<- rbind.data.frame(house_pob_mnz, house_chapinero_mnz)
+view(HOUSEOF)
+table(is.na( HOUSEOF$surface_new_3))
 #CREACIÓN VARIABLES POR MEDIO DE DESCRIPCIÓN PARA BASE DE DATOS
 Descripc<-HOUSEOF$description
 parqueaderoT_aux1<-str_detect( Descripc,"parqueadero") 
@@ -200,8 +203,6 @@ summary(ascensorT)
 ascensorT[is.na(ascensorT)] = 0
 summary(ascensorT)
 HOUSEOF <- cbind(HOUSEOF, ascensorT)
-
-
 
 
 #########
