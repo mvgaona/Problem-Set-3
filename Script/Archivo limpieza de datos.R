@@ -434,7 +434,7 @@ rm(habitaciones)
 
 ##================================================================================
 
-#Creación de variables geoespacial
+####----Creación de variables geoespacial----###
 Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
                       featuretype = "boundary:administrative", 
                       format_out = "sf_polygon") %>% .$multipolygon
@@ -478,8 +478,6 @@ opq(bbox = getbb("El poblado Medellin"))
 cajaElpob <- opq(bbox = getbb("Comuna 14 - El Poblado Medellín"))
 opq(bbox = getbb("Chapinero Bogotá"))
 ## objeto osm para extracción de amenity
-
-
 osmmed = opq(bbox = getbb("Medellin")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
 class(osmmed)
@@ -520,10 +518,7 @@ min_dist_transp_<-data.frame(min_dist_transp_)
 #Se incorpora la mínima distancia al transporte a la base de datos
 HOUSEOF<-cbind(HOUSEOF, min_dist_transp_)
 table(HOUSEOF$base)
-
-
-
-##Extracción datos de manzanas
+######-----Extracción datos de manzanas---####
 #Apartamentos
 CHAPINERO = getbb(place_name = "Chapinero Bogotá", 
                   featuretype = "amenity",
@@ -613,7 +608,11 @@ min_dist_park<- apply(min_dist_park_, 1 , min)
 min_dist_park<-data.frame(min_dist_park)
 #Se incorpora la mínima distancia a parques a la base de datos 
 HOUSEOF<-cbind(HOUSEOF, min_dist_park )
-
+cantidad_na <- sapply(HOUSEOF, function(x) sum(is.na(x)))
+cantidad_na <- data.frame(cantidad_na)
+porcentaje_na <- cantidad_na/nrow(HOUSEOF)
+porcentaje_na <-porcentaje_na*100
+porcentaje_na #Visualizo el porcentaje de los datos que tienen NA
 
 #Para guardar la base de datos
 saveRDS(HOUSEOF, "../Elementos_Guardados/HOUSEOF.rds" )
@@ -624,28 +623,41 @@ saveRDS(HOUSEM, "../Elementos_Guardados/HOUSEM.rds" )
 
 DTRAINHOUSE<- HOUSEM[HOUSEM$base=="test",]
 DTESTHOUSE<- HOUSEM[HOUSEM$base=="train",]
-
 #Para guardar la base de datos
 saveRDS(DTRAINHOUSE, "../Elementos_Guardados/DTRAINHOUSE.rds" )
 saveRDS(DTESTHOUSE, "../Elementos_Guardados/DTESTHOUSE.rds" )
 
-####Descripción de variables 
-#Habitaciones
-habitaciones <- data.frame(HOUSEOF$habitaciones) 
-class(HOUSEOF$habitaciones)
-plot(hist(HOUSEOF$habitaciones),col = "black", main="Histograma No. de habitaciones de la vivienda",
+######------------------############
+#########----Descripción de variables----#####
+###Ubicación del inmueble
+Ubicación <- HOUSEM$l3
+class(Ubicación)
+table(Ubicación)
+skim(Ubicación)
+rm(Ubicación)
+#Tipo de vivienda
+TipoViv <- HOUSEM$property_type
+class(TipoViv)
+table(TipoViv)
+skim(TipoViv)
+rm(TipoViv)
+.#Habitaciones
+habitaciones <- data.frame(HOUSEM$habitaciones) 
+class(HOUSEM$habitaciones)
+plot(hist(HOUSEM$habitaciones),col = "black", main="Histograma No. de habitaciones de la vivienda",
      xlab="Habitaciones",
      ylab="Frecuencia")
-min(HOUSEOF$habitaciones)
-max(HOUSEOF$habitaciones)
-mean(HOUSEOF$habitaciones)
+min(HOUSEM$habitaciones)
+max(HOUSEM$habitaciones)
+mean(HOUSEM$habitaciones)
 modehabitaciones <- function(habitaciones){
   return(as.numeric(names(which.max(table(habitaciones)))))}
 modehabitaciones(habitaciones)
 summary(habitaciones)
 rm(habitaciones)
 #Descripción baños
-baños <- as.numeric(HOUSEOF$baniostot) 
+HOUSEOF<- readRDS( "../Elementos_Guardados/HOUSEOF.rds")
+baños <- as.numeric(HOUSEM$baniostot) 
 class(baños)
 plot(hist(baños),col = "red", main="Histograma No. de baños de la vivienda",
      xlab="Habitaciones",
@@ -672,29 +684,41 @@ Parqueadero <- factor(Parqueadero, labels = c("1", "0"))
 summary(Parqueadero)
 rm(Parqueadero)
 #Tipo inmueble
-TipoVivienda <- as.factor(HOUSEOF$property_type)
+TipoVivienda <- as.factor(HOUSEM$property_type)
 class(TipoVivienda)
 summary(TipoVivienda)
 rm(TipoVivienda)
 #Área
-área <- data.frame(HOUSEOF$surface_new_3) 
-class(HOUSEOF$surface_new_3)
-plot(hist(HOUSEOF$surface_new_3),col = "black", main="Histograma No. de habitaciones de la vivienda",
-     xlab="Habitaciones",
+área <-HOUSEM$surface_new_3
+class(área)
+plot(hist(área),col = "black", main="Histograma Área",
+     xlab="Área",
      ylab="Frecuencia")
-min(HOUSEOF$surface_new_3)
-max(HOUSEOF$surface_new_3)
-mean(HOUSEOF$surface_new_3)
+summary(área)
 modeárea <- function(área){
   return(as.numeric(names(which.max(table(área)))))}
 modeárea(área)
 summary(área)
 rm(área)
 ######
+#DistanciaTransP
+TP <- HOUSEM$min_dist_transp_
+modeTP <- function(TP){
+  return(as.numeric(names(which.max(table(TP)))))}
+modeTP(TP)
+summary(TP)
+rm(TP)
+#Distancia Bares
+Bares <- HOUSEM$min_dist_bar_
+modeBares <- function(Bares){
+  return(as.numeric(names(which.max(table(Bares)))))}
+modeBares(Bares)
+summary(Bares)
+rm(Bares)
+#Distancia Parques
+Parques <- HOUSEM$min_dist_park
+summary(Parques)
+modeParques <- function(Parques){
+  return(as.numeric(names(which.max(table(Parques)))))}
+modeParques(Parques)
 
-
-cantidad_na <- sapply(HOUSEOF, function(x) sum(is.na(x)))
-cantidad_na <- data.frame(cantidad_na)
-porcentaje_na <- cantidad_na/nrow(HOUSEOF)
-porcentaje_na <-porcentaje_na*100
-porcentaje_na #Visualizo el porcentaje de los datos que tienen NA
