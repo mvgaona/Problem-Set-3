@@ -33,6 +33,7 @@ p_load(caret,
        leaflet,
        tmaptools,
        class,
+       rgeos,
        nngeo,
        osmdata)
 rm(list = ls()) #Limpia las variables que existan al momento de correr el código
@@ -61,8 +62,8 @@ DTEST$description <- str_replace_all(DTEST$description, "[^[:alnum:]]", " ")
 DTRAIN$description <- gsub("\\s+", " ", str_trim(DTRAIN$description))
 DTEST$description <- gsub("\\s+", " ", str_trim(DTEST$description))
 #En esta sección se unen la base Train y test para realizar la limpieza de datos
-train<- DTRAIN %>% mutate(base = "train")
-test <- DTEST %>% mutate(base="test")
+train<- DTRAIN %>% mutate(base = "train") #Se crea columna para identificar datos de train
+test <- DTEST %>% mutate(base="test") #Se crea columna para identificar datos de test
 HOUSE<- bind_rows(train,test) %>% st_as_sf(coords=c("lon","lat"),crs=4326)
 class(HOUSE)
 leaflet() %>% addTiles() %>% addCircles(data = HOUSE)
@@ -87,46 +88,42 @@ sf_use_s2(FALSE)
 mnzBogota<-subset(mnzBog, select=c("MANZ_CCNCT", "geometry"))
 ####
 mnz_chap <- mnzBogota[Polchapinero,]
-rm(mnz_chap)
+
 leaflet() %>% addTiles() %>% addCircles(data = House_Chapinero, color = "red" ) %>% addPolygons(data= mnz_chap, col = "blue")
-#house_chapinero_mnz <- st_join(House_Chapinero, mnz_chap)
+house_chapinero_mnz <- st_join(x=House_Chapinero, y=mnz_chap)
 colnames(house_chapinero_mnz)
-####
-HOUSE_Bog<- HOUSE[HOUSE$l3=="Bogotá D.C",]
-House_BOG_mnz<- st_join(HOUSE_Bog, mnzBogota)
-table(is.na(House_BOG_mnz$MANZ_CCNCT))
-db_1 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==F)
-db_2 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+
+table(is.na(house_chapinero_mnz$MANZ_CCNCT))
+db_1 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==F)
+db_2 <- house_chapinero_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 leaflet() %>% addTiles() %>% addPolygons(data=db_2[1,] %>% st_buffer(dist = 0.0005))
 db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnzBogota)%>% subset(duplicated(property_id)==F)
 
 
-filtro<-is.na(House_BOG_mnz$MANZ_CCNCT)
-House_BOG_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
-table(is.na(House_BOG_mnz$MANZ_CCNCT))
+filtro<-is.na(house_chapinero_mnz$MANZ_CCNCT)
+house_chapinero_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
+table(is.na(house_chapinero_mnz$MANZ_CCNCT))
 
-House_BOG_mnz <-  House_BOG_mnz %>%
+house_chapinero_mnz <-  house_chapinero_mnz %>%
   group_by(MANZ_CCNCT) %>%
   mutate(new_surface_2=median(surface_total,na.rm=T))
 
-table(is.na( House_BOG_mnz$new_surface_2))
+table(is.na( house_chapinero_mnz$new_surface_2))
 
-house_buf_Bog <- st_buffer(House_BOG_mnz,dist=0.005)
+house_buf_Bog <- st_buffer(House_Chapinero,dist=0.005)
 
-leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=House_BOG_mnz)
+leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=house_chapinero_mnz)
 
-house_buf_Bog<- st_join(house_buf_Bog,HOUSE_Bog[,"surface_total"])
-exportRDS(house_buf_Bog, "house_buf_Bog.rds")
-readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/house_buf_Bog.rds")
+house_buf_Bog<- st_join(house_buf_Bog,House_Chapinero[,"surface_total"])
 
 st_geometry(house_buf_Bog) = NULL
 
 house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
 
-House_BOG_mnz<- left_join(House_BOG_mnz,house_buf_mean_Bog,"property_id")
+house_chapinero_mnz<- left_join(house_chapinero_mnz,house_buf_mean_Bog,"property_id")
 
-table(is.na( House_BOG_mnz$new_surface_2))
-table(is.na( House_BOG_mnz$surface_new_3))
+table(is.na( house_chapinero_mnz$new_surface_2))
+table(is.na( house_chapinero_mnz$surface_new_3))
 
 rm(house_buf_Bog, house_buf_mean_Bog)
 
@@ -136,27 +133,27 @@ PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín",
                     format_out = "sf_polygon") 
 
 leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")
-PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
-House_Poblado<- HOUSE[PolPoblado,]
+
+PolPoblado_buf <- st_buffer(PolPoblado,dist=0.001) #Debido a que se detectaron apartamentos fuera del polígono de El Poblado, se realiza el buffer para aumentar dicho Polígono y así incluirlos
+leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")%>% addPolygons(data= PolPoblado_buf, col = "blue")
+House_Poblado<- HOUSE[PolPoblado_buf,]
+table(House_Poblado$base)
+
 available_features()
-available_tags("amenity") 
+available_tags("amenity")
 mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
 sf_use_s2(FALSE)
 mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
-mnz_pob <- mnzMedellin[PolPoblado,]
+mnz_pob <- mnzMedellin[PolPoblado_buf,]
 
 leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
-###
-house_pob_mnz <- st_join(House_Poblado, mnz_pob)
+house_pob_mnz <- st_join(x=House_Poblado, y=mnz_pob)
 colnames(house_pob_mnz)
-####
-HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
-house_pob_mnz <- st_join(HOUSE_Med, mnzMedellin)
 table(is.na(house_pob_mnz$MANZ_CCNCT))
 db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
 db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
 leaflet() %>% addTiles() %>% addPolygons(data=db_2M[1,] %>% st_buffer(dist = 0.0005))
-db_2M <- st_join(st_buffer(db_2M, dist = 0.0009), mnzMedellin)%>% subset(duplicated(property_id)==F)
+db_2M <- st_join(st_buffer(db_2M, dist = 0.001), mnzMedellin)%>% subset(duplicated(property_id)==F)
 table(is.na(db_2M$MANZ_CCNCT))
 
 filtro_Med<-is.na(house_pob_mnz$MANZ_CCNCT)
@@ -169,11 +166,11 @@ house_pob_mnz <-  house_pob_mnz %>%
 
 table(is.na( house_pob_mnz$new_surface_2))
 
-house_buf_Med <- st_buffer(house_pob_mnz,dist=0.01)
+house_buf_Med <- st_buffer(House_Poblado,dist=0.008)
 
-leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
+#leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
 
-house_buf_Med<- st_join(house_buf_Med,HOUSE_Med[,"surface_total"])
+house_buf_Med<- st_join(house_buf_Med,House_Poblado[,"surface_total"])
 
 st_geometry(house_buf_Med) = NULL
 
@@ -183,11 +180,117 @@ house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
 
 table(is.na( house_pob_mnz$new_surface_2))
 table(is.na( house_pob_mnz$surface_new_3))
-class(house_pob_mnz)
-HOUSEOF<- rbind.data.frame(house_pob_mnz, House_BOG_mnz)
+
+
+rm(house_buf_Med, house_buf_mean_Med )
+
+
+
+
+####
+# HOUSE_Bog<- HOUSE[HOUSE$l3=="Bogotá D.C",]
+# House_BOG_mnz<- st_join(HOUSE_Bog, mnzBogota)
+# table(is.na(House_BOG_mnz$MANZ_CCNCT))
+# db_1 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==F)
+# db_2 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+# leaflet() %>% addTiles() %>% addPolygons(data=db_2[1,] %>% st_buffer(dist = 0.0005))
+# db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnzBogota)%>% subset(duplicated(property_id)==F)
+# 
+# 
+# filtro<-is.na(House_BOG_mnz$MANZ_CCNCT)
+# House_BOG_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
+# table(is.na(House_BOG_mnz$MANZ_CCNCT))
+# 
+# House_BOG_mnz <-  House_BOG_mnz %>%
+#   group_by(MANZ_CCNCT) %>%
+#   mutate(new_surface_2=median(surface_total,na.rm=T))
+# 
+# table(is.na( House_BOG_mnz$new_surface_2))
+# 
+# house_buf_Bog <- st_buffer(House_BOG_mnz,dist=0.005)
+# 
+# leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=House_BOG_mnz)
+# 
+# house_buf_Bog<- st_join(house_buf_Bog,HOUSE_Bog[,"surface_total"])
+# exportRDS(house_buf_Bog, "house_buf_Bog.rds")
+# readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/house_buf_Bog.rds")
+# 
+# st_geometry(house_buf_Bog) = NULL
+# 
+# house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
+# 
+# House_BOG_mnz<- left_join(House_BOG_mnz,house_buf_mean_Bog,"property_id")
+# 
+# table(is.na( House_BOG_mnz$new_surface_2))
+# table(is.na( House_BOG_mnz$surface_new_3))
+# 
+# rm(house_buf_Bog, house_buf_mean_Bog)
+# 
+# #Para Medellín
+# PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
+#                     featuretype = "boundary:administrative", 
+#                     format_out = "sf_polygon") 
+# 
+# leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")
+# PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
+# House_Poblado<- HOUSE[PolPoblado,]
+# available_features()
+# available_tags("amenity") 
+# mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
+# sf_use_s2(FALSE)
+# mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
+# mnz_pob <- mnzMedellin[PolPoblado,]
+# 
+# leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
+# ###
+# house_pob_mnz <- st_join(House_Poblado, mnz_pob)
+# colnames(house_pob_mnz)
+# ####
+# HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
+# house_pob_mnz <- st_join(HOUSE_Med, mnzMedellin)
+# table(is.na(house_pob_mnz$MANZ_CCNCT))
+# db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
+# db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
+# leaflet() %>% addTiles() %>% addPolygons(data=db_2M[1,] %>% st_buffer(dist = 0.0005))
+# db_2M <- st_join(st_buffer(db_2M, dist = 0.0009), mnzMedellin)%>% subset(duplicated(property_id)==F)
+# table(is.na(db_2M$MANZ_CCNCT))
+# 
+# filtro_Med<-is.na(house_pob_mnz$MANZ_CCNCT)
+# house_pob_mnz$MANZ_CCNCT[filtro_Med]<-db_2M$MANZ_CCNCT
+# table(is.na(house_pob_mnz$MANZ_CCNCT))
+# 
+# house_pob_mnz <-  house_pob_mnz %>%
+#   group_by(MANZ_CCNCT) %>%
+#   mutate(new_surface_2=median(surface_total,na.rm=T))
+# 
+# table(is.na( house_pob_mnz$new_surface_2))
+# 
+# house_buf_Med <- st_buffer(house_pob_mnz,dist=0.01)
+# 
+# leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
+# 
+# house_buf_Med<- st_join(house_buf_Med,HOUSE_Med[,"surface_total"])
+# 
+# st_geometry(house_buf_Med) = NULL
+# 
+# house_buf_mean_Med <-house_buf_Med %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
+# 
+# house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
+# 
+# table(is.na( house_pob_mnz$new_surface_2))
+# table(is.na( house_pob_mnz$surface_new_3))
+# class(house_pob_mnz)
+
+
+HOUSEOF<- rbind.data.frame(house_pob_mnz, house_chapinero_mnz)
 view(HOUSEOF)
 table(is.na( HOUSEOF$surface_new_3))
 table(HOUSEOF$base)
+
+#new_test<- HOUSEOF[HOUSEOF$base=="test",] Código que se usó para validar qué observaciones habían quedado fuera del polígono, que hacían que la base test no fuese igual a la inicial
+#df<-DTEST %>% anti_join(new_test,by="property_id")
+
+
 
 #CREACIÓN VARIABLES POR MEDIO DE DESCRIPCIÓN PARA BASE DE DATOS
 Descripc<-HOUSEOF$description
@@ -204,11 +307,11 @@ parqueaderoT_aux10<-str_detect( Descripc,"garje")
 parqueaderoT<-ifelse(parqueaderoT_aux1==TRUE|parqueaderoT_aux2==TRUE| parqueaderoT_aux3==TRUE|parqueaderoT_aux4==TRUE|parqueaderoT_aux5==TRUE|parqueaderoT_aux6==TRUE|parqueaderoT_aux7==TRUE|parqueaderoT_aux8==TRUE|parqueaderoT_aux9 == TRUE |parqueaderoT_aux10==TRUE , 1,0 )
 parqueaderoT<-data.frame(parqueaderoT)
 summary(parqueaderoT)
-parqueaderoT[is.na(parqueaderoT)] = 0
+parqueaderoT[is.na(parqueaderoT)] = 0 #Se imputa cero a los datos NA, porque existen datos donde no había descripción
 summary(parqueaderoT)
-HOUSEOF <- cbind(HOUSEOF, ParqueaderoT)
+HOUSEOF <- cbind(HOUSEOF, parqueaderoT)
 #####
-#Vamos a imputar Ascensor
+#Vamos a crear la variable: Ascensor
 ascensorT_aux1<-str_detect( Descripc,"ascensor") 
 ascensorT_aux2<-str_detect( Descripc,"acensor") 
 ascensorT_aux3<-str_detect( Descripc,"asensor") 
@@ -220,7 +323,7 @@ ascensorT_aux8<-str_detect( Descripc,"elevadores")
 ascensorT<-ifelse(ascensorT_aux1==TRUE|ascensorT_aux2==TRUE| ascensorT_aux3==TRUE|ascensorT_aux4==TRUE|ascensorT_aux5==TRUE|ascensorT_aux6==TRUE|ascensorT_aux7==TRUE|ascensorT_aux8==TRUE, 1,0 )
 ascensorT<-data.frame(ascensorT)
 summary(ascensorT)
-ascensorT[is.na(ascensorT)] = 0
+ascensorT[is.na(ascensorT)] = 0 #Se imputa cero a los datos NA, porque existen datos donde no había descripción
 summary(ascensorT)
 HOUSEOF <- cbind(HOUSEOF, ascensorT)
 
@@ -300,7 +403,7 @@ HOUSEOF$banio_tot<-str_replace_all(string = HOUSEOF$banio_tot, pattern = "baos" 
 HOUSEOF$banio_tot<-str_replace_all(string = HOUSEOF$banio_tot, pattern = "\n" , replacement = "")
 HOUSEOF$banio_tot<-as.numeric(HOUSEOF$banio_tot)
 View(HOUSEOF)
-HOUSEOF$banio_tot[is.na(HOUSEOF$banio_tot)] = 1
+HOUSEOF$banio_tot[is.na(HOUSEOF$banio_tot)] = 1 #Se imputa el número 1, teniendo en cuenta que por nivel de sanidad, debe existir al menos 1 baño en las viviendas
 summary(HOUSEOF$banio_tot) 
 HOUSEOF$bathrooms[is.na(HOUSEOF$bathrooms)] = 1
 new_banio_aux<-cbind(HOUSEOF$bathrooms, HOUSEOF$banio_tot)
@@ -328,6 +431,9 @@ View(HOUSEOF)
 HOUSEOF<- cbind(HOUSEOF,habitaciones)
 View(HOUSEOF)
 rm(habitaciones)
+
+##================================================================================
+
 #Creación de variables geoespacial
 Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
                       featuretype = "boundary:administrative", 
@@ -338,25 +444,30 @@ Poblado = getbb(place_name = "Comuna 14 - El Poblado Medellin",
 require("tmaptools")
 geocode_OSM("El poblado, Medellin") 
 PointElPoblado = geocode_OSM("Comuna 14 - El Poblado, Medellín", as.sf=T)  
-PointElPoblado
+
 PointChapinero = geocode_OSM("UPZ Chapinero, Bogotá", as.sf=T) 
-PointChapinero
+
 leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
 leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
 ## la función addTiles adiciona la capa de OpenStreetMap
 leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
+
+
 #Poligono chapinero
-Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
-                      featuretype = "boundary:administrative", 
-                      format_out = "sf_polygon") %>% .$multipolygon
-leaflet() %>% addTiles() %>% addPolygons(data= Polchapinero, col = "blue")%>% 
-  addCircleMarkers(data=DTRAIN_sf_mapa, col= "red")
-#Poligono poblado
-PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
-                    featuretype = "boundary:administrative", 
-                    format_out = "sf_polygon") %>% .$multipolygon
-leaflet() %>% addTiles() %>% addPolygons(data= Poblado, col = "blue")%>% 
-  addCircleMarkers(data=DTRAIN_sf, col= "red")
+# Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
+#                       featuretype = "boundary:administrative", 
+#                       format_out = "sf_polygon") %>% .$multipolygon
+# leaflet() %>% addTiles() %>% addPolygons(data= Polchapinero, col = "blue")%>% 
+#   addCircleMarkers(data=DTRAIN_sf_mapa, col= "red")
+# #Poligono poblado
+# PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
+#                     featuretype = "boundary:administrative", 
+#                     format_out = "sf_polygon") %>% .$multipolygon
+# leaflet() %>% addTiles() %>% addPolygons(data= Poblado, col = "blue")%>% 
+#   addCircleMarkers(data=DTRAIN_sf, col= "red")
+
+
+
 #Atributos
 #Puede acceder a la lista de features disponibles en OSM aquí. En R puede obtener un vector con los nombres de los features usando la función available_features():
 available_features() %>% head(20)
@@ -367,6 +478,8 @@ opq(bbox = getbb("El poblado Medellin"))
 cajaElpob <- opq(bbox = getbb("Comuna 14 - El Poblado Medellín"))
 opq(bbox = getbb("Chapinero Bogotá"))
 ## objeto osm para extracción de amenity
+
+
 osmmed = opq(bbox = getbb("Medellin")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
 class(osmmed)
@@ -375,9 +488,10 @@ osmbog = opq(bbox = getbb(" Bogotá ")) %>%
 class(osmbog)
 osmmed_sf = osmmed %>% osmdata_sf()
 View(osmmed_sf)
+available_tags("amenity")
 osmbog_sf = osmbog %>% osmdata_sf()
 View(osmbog_sf)
-Transporte_publicoMed = osmmed_sf$osm_points %>% select(osm_id,amenity) 
+ Transporte_publicoMed = osmmed_sf$osm_points %>% select(osm_id,amenity) 
 View(Transporte_publicoMed)
 Transporte_publicoBog = osmbog_sf$osm_points %>% select(osm_id,amenity) 
 View(Transporte_publicoBog)
@@ -385,53 +499,6 @@ View(Transporte_publicoBog)
 leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoMed , col="red")
 leaflet() %>% addTiles() %>% addCircleMarkers(data=Transporte_publicoBog, col="blue")%>% addPolygons(data= Polchapinero, col = "RED")
 p_load(rgdal)
-
-##Extracción datos de manzanas
-#Apartamentos
-CHAPINERO = getbb(place_name = "Chapinero Bogotá", 
-                  featuretype = "amenity",
-                  format_out = "sf_polygon")
-Poblado = getbb(place_name = "Comuna 14 - El Poblado Medellin", 
-                featuretype = "amenity",
-                format_out = "sf_polygon")
-
-#Bares Bogotá y Antioquia 
-barbog = opq(bbox = st_bbox(mnzBogota)) %>%
-  add_osm_feature(key = "amenity", value = "bar") %>%
-  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
-barbog %>% head()
-barant = opq(bbox = st_bbox(mnzAntioquia)) %>%
-  add_osm_feature(key = "amenity", value = "bar") %>%
-  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
-barant %>% head()
-#Visualizar info 
-leaflet() %>% addTiles() %>% 
-  addPolygons(data=mnzBogota) %>% # manzanas
-  addPolygons(data= CHAPINERO , col="green") %>%  # transportepub
-  addCircles(data= HOUSEOF , col="red", weight=2) %>% # apartamentos
-  addCircles(data=barbog , col="black" , weight=2)
-st_crs(mnzBogota) == st_crs(HOUSEOF)
-st_crs(mnzAntioquia) == st_crs(HOUSEOF)
-#Uniondatbog = st_join(x=DTRAIN_sf , y=mnzBogota)
-
-#Se calculará distancia a bares
-#Con respecto a bares Bogotá
-dist_bar_bog <- st_distance(x=HOUSEOF , y=barbog)
-min_dist_bog <- apply(dist_bar_bog , 1 , min)
-min_dist_bog<-data.frame(min_dist_bog)
-
-#Con respecto a bares Antioquia
-dist_bar_med <- st_distance(x=HOUSEOF , y=barant)
-min_dist_bar_med <- apply(dist_bar_med, 1 , min)
-min_dist_bar_med<-data.frame(min_dist_bar_med)
-
-#Se selecciona la menor distancia, esto porque se compararon distancias de apartamentos en Bogotá con ubicaciones en Antioquia y viceversa
-min_dist_bar<-cbind(min_dist_bog,min_dist_bar_med)
-min_dist_bar_<- apply(min_dist_bar, 1 , min)
-min_dist_bar_<-data.frame(min_dist_bar_)
-
-#Se incorpora la mínima distancia a bares a la base de datos 
-HOUSEOF<-cbind(HOUSEOF, min_dist_bar_ )
 
 #Se obtendrá la distancia mínima a transporte público
 #Con respecto a transporte público en Bogotá
@@ -449,26 +516,136 @@ min_dist_transp<-cbind(min_dist_transp_bog,min_dist_transp_med)
 min_dist_transp_<- apply(min_dist_transp, 1 , min)
 min_dist_transp_<-data.frame(min_dist_transp_)
 
-#Se incorpora la mínima distancia a bares a la base de datos
+
+#Se incorpora la mínima distancia al transporte a la base de datos
 HOUSEOF<-cbind(HOUSEOF, min_dist_transp_)
+table(HOUSEOF$base)
+
+
+
+##Extracción datos de manzanas
+#Apartamentos
+CHAPINERO = getbb(place_name = "Chapinero Bogotá", 
+                  featuretype = "amenity",
+                  format_out = "sf_polygon")
+Poblado = getbb(place_name = "Comuna 14 - El Poblado Medellin", 
+                featuretype = "amenity",
+                format_out = "sf_polygon")
+
+#Bares Bogotá y Antioquia 
+barbog = opq(bbox = st_bbox(mnzBogota)) %>%
+  add_osm_feature(key = "amenity", value = "bar") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+barbog %>% head()
+barant = opq(bbox = st_bbox(mnzMedellin)) %>%
+  add_osm_feature(key = "amenity", value = "bar") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+barant %>% head()
+#Visualizar info 
+leaflet() %>% addTiles() %>% 
+  addPolygons(data=mnzBogota) %>% # manzanas
+  addPolygons(data= CHAPINERO , col="green") %>%  # transportepub
+  addCircles(data= HOUSEOF , col="red", weight=2) %>% # apartamentos
+  addCircles(data=barbog , col="black" , weight=2)
+st_crs(mnzBogota) == st_crs(HOUSEOF)
+st_crs(mnzMedellin) == st_crs(HOUSEOF)
+#Uniondatbog = st_join(x=DTRAIN_sf , y=mnzBogota)
+
+#Se calculará distancia a bares
+#Con respecto a bares Bogotá
+dist_bar_bog <- st_distance(x=HOUSEOF , y=barbog)
+min_dist_bog <- apply(dist_bar_bog , 1 , min)
+min_dist_bog<-data.frame(min_dist_bog)
+
+#Con respecto a bares Medellín
+dist_bar_med <- st_distance(x=HOUSEOF , y=barant)
+min_dist_bar_med <- apply(dist_bar_med, 1 , min)
+min_dist_bar_med<-data.frame(min_dist_bar_med)
+
+#Se selecciona la menor distancia, esto porque se compararon distancias de apartamentos en Bogotá con ubicaciones en Antioquia y viceversa
+min_dist_bar<-cbind(min_dist_bog,min_dist_bar_med)
+min_dist_bar_<- apply(min_dist_bar, 1 , min)
+min_dist_bar_<-data.frame(min_dist_bar_)
+
+#Se incorpora la mínima distancia a bares a la base de datos 
+HOUSEOF<-cbind(HOUSEOF, min_dist_bar_ )
+
+# Obtendremos la distancia más cercana a parques
+
+PolPoblado_buf <- st_buffer(PolPoblado,dist=0.001)
+PolChap_buf <- st_buffer(CHAPINERO,dist=0.001)
+
+mnz_chap_buf <- mnzBogota[Polchapinero,]
+
+#Parques Bogotá y Medellín
+Parkbog = opq(bbox = st_bbox(mnz_chap_buf)) %>%
+  add_osm_feature(key = "leisure", value = "park") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id,name)
+Parkbog  %>% head()
+
+Parkmed = opq(bbox = st_bbox(mnz_pob)) %>%
+  add_osm_feature(key = "leisure", value = "park") %>%
+  osmdata_sf() %>% .$osm_points %>% select(osm_id)
+Parkmed  %>% head()
+
+#Se calcula el centroide para los parques de Bogotá y Medellín
+centroides_PARK_BOG <- gCentroid(as(Parkbog$geometry, "Spatial"), byid = T)
+centroides_PARK_Med <- gCentroid(as(Parkmed$geometry, "Spatial"), byid = T)
+
+#Se convierten los centroides a formato SF con coordenadas WGS84
+centroides_park_bog_sf <- st_as_sf(centroides_PARK_BOG, coords = c("x", "y"),crs=4326)
+centroides_park_med_sf <- st_as_sf(centroides_PARK_Med, coords = c("x", "y"),crs=4326)
+
+#Se calcula la mínima distancia a parques de los apartamentos con respecto a parques de Bogotá
+dist_park_bog <- st_distance(x = HOUSEOF, y = centroides_park_bog_sf)
+min_dist_park_bog <- apply(dist_park_bog, 1 , min)
+min_dist_park_bog<-data.frame(min_dist_park_bog)
+
+#Se calcula la mínima distancia a parques de los apartamentos con respecto a parques de Medellín
+centroides_park_med_sf <- st_as_sf(centroides_PARK_Med, coords = c("x", "y"),crs=4326)
+dist_park_med <- st_distance(x = HOUSEOF, y = centroides_park_med_sf)
+min_dist_park_med <- apply(dist_park_med, 1 , min)
+min_dist_park_med<-data.frame(min_dist_park_med)
+
+#Se selecciona la menor distancia, esto porque se compararon distancias de apartamentos en Bogotá con ubicaciones en Medellín y viceversa
+min_dist_park_<-cbind(min_dist_park_bog,min_dist_park_med)
+min_dist_park<- apply(min_dist_park_, 1 , min)
+min_dist_park<-data.frame(min_dist_park)
+#Se incorpora la mínima distancia a parques a la base de datos 
+HOUSEOF<-cbind(HOUSEOF, min_dist_park )
+
+
+#Para guardar la base de datos
+saveRDS(HOUSEOF, "../Elementos_Guardados/HOUSEOF.rds" )
+
+HOUSEM<-subset(HOUSEOF, select=c("property_id", "l3", "property_type", "price", "surface_new_3", "MANZ_CCNCT", "geometry", "parqueaderoT", "ascensorT", "baniostot", "habitaciones", "base", "min_dist_bar_", "min_dist_transp_", "min_dist_park"))
+#Para guardar la base de datos
+saveRDS(HOUSEM, "../Elementos_Guardados/HOUSEM.rds" )
+
+DTRAINHOUSE<- HOUSEM[HOUSEM$base=="test",]
+DTESTHOUSE<- HOUSEM[HOUSEM$base=="train",]
+
+#Para guardar la base de datos
+saveRDS(DTRAINHOUSE, "../Elementos_Guardados/DTRAINHOUSE.rds" )
+saveRDS(DTESTHOUSE, "../Elementos_Guardados/DTESTHOUSE.rds" )
 
 ####Descripción de variables 
 #Habitaciones
-habitaciones <- data.frame(DTRAIN$habitaciones) 
-class(DTRAIN$habitaciones)
-plot(hist(DTRAIN$habitaciones),col = "black", main="Histograma No. de habitaciones de la vivienda",
+habitaciones <- data.frame(HOUSEOF$habitaciones) 
+class(HOUSEOF$habitaciones)
+plot(hist(HOUSEOF$habitaciones),col = "black", main="Histograma No. de habitaciones de la vivienda",
      xlab="Habitaciones",
      ylab="Frecuencia")
-min(DTRAIN$habitaciones)
-max(DTRAIN$habitaciones)
-mean(DTRAIN$habitaciones)
+min(HOUSEOF$habitaciones)
+max(HOUSEOF$habitaciones)
+mean(HOUSEOF$habitaciones)
 modehabitaciones <- function(habitaciones){
   return(as.numeric(names(which.max(table(habitaciones)))))}
 modehabitaciones(habitaciones)
 summary(habitaciones)
 rm(habitaciones)
 #Descripción baños
-baños <- as.numeric(DTRAIN$baniostot) 
+baños <- as.numeric(HOUSEOF$baniostot) 
 class(baños)
 plot(hist(baños),col = "red", main="Histograma No. de baños de la vivienda",
      xlab="Habitaciones",
@@ -482,35 +659,42 @@ modebaños(baños)
 summary(baños)
 rm(baños)
 #Ascensor
-Ascensor <- as.factor(DTRAIN$ascensorT)
+Ascensor <- as.factor(HOUSEOF$ascensorT)
 class(Ascensor)
 skim(Ascensor)
 Ascensor <- factor(Ascensor, labels = c("1", "0"))
 summary(Ascensor)
 rm(Ascensor)
 #Parqueadero
-Parqueadero <- as.factor(DTRAIN$parqueaderoT)
+Parqueadero <- as.factor(HOUSEOF$parqueaderoT)
 class(Parqueadero)
 Parqueadero <- factor(Parqueadero, labels = c("1", "0"))
 summary(Parqueadero)
 rm(Parqueadero)
 #Tipo inmueble
-TipoVivienda <- as.factor(DTRAIN$property_type)
+TipoVivienda <- as.factor(HOUSEOF$property_type)
 class(TipoVivienda)
 summary(TipoVivienda)
 rm(TipoVivienda)
 #Área
 área <- data.frame(HOUSEOF$surface_new_3) 
-class(DTRAIN$surface_new_3)
-plot(hist(DTRAIN$surface_new_3),col = "black", main="Histograma No. de habitaciones de la vivienda",
+class(HOUSEOF$surface_new_3)
+plot(hist(HOUSEOF$surface_new_3),col = "black", main="Histograma No. de habitaciones de la vivienda",
      xlab="Habitaciones",
      ylab="Frecuencia")
-min(DTRAIN$surface_new_3)
-max(DTRAIN$surface_new_3)
-mean(DTRAIN$surface_new_3)
+min(HOUSEOF$surface_new_3)
+max(HOUSEOF$surface_new_3)
+mean(HOUSEOF$surface_new_3)
 modeárea <- function(área){
   return(as.numeric(names(which.max(table(área)))))}
 modeárea(área)
 summary(área)
 rm(área)
 ######
+
+
+cantidad_na <- sapply(HOUSEOF, function(x) sum(is.na(x)))
+cantidad_na <- data.frame(cantidad_na)
+porcentaje_na <- cantidad_na/nrow(HOUSEOF)
+porcentaje_na <-porcentaje_na*100
+porcentaje_na #Visualizo el porcentaje de los datos que tienen NA
