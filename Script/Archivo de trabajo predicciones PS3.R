@@ -1,7 +1,13 @@
+# Valeria Gaona - 202214418
+# Andrea Beleño - 200620739
+
+#### PROBLEM SET 3 #####
+
 #####SuperLearner
+
 require("tidyverse")
-require("ranger")
-require("SuperLearner")
+p_load(ranger, SuperLearner, caret)
+
 folds = 5
 fitY <- SuperLearner(Y = DTRAIN$price, X = DTRAIN,
                      method = "method.NNLS", SL.library = c("SL.lm", "SL.ranger"),
