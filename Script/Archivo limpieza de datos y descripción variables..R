@@ -2,7 +2,8 @@
 # Andrea Beleño - 200620739
 
 #### PROBLEM SET 3 #####
-
+#En siguiente archivo de trabajo se evidencia el tratamiento de limpieza de datos y de creación de variables por medio de identificación de datos por descripción de la vivienda y variables adquiridas por ell análisis geoespacial.
+#Además, se evidencia el procedimiento de análisis descriptivo de las variables del modelo de precio de vivienda.
 install.packages("pacman") #Instalar librería si no cuenta con esta 
 library(pacman) #Llamar librería#Se cargan las librerías a usar en el presente Problem Set
 p_load(caret, 
@@ -37,13 +38,14 @@ p_load(caret,
        nngeo,
        osmdata)
 rm(list = ls()) #Limpia las variables que existan al momento de correr el código
-###Base de datos Problem set 2
+###Base de datos Problem set 3
 library(readr)
 #Se debe poner el directorio de donde está el script:
 #Session-> Set Working directory -> To source file location, para lo cual se debe descargar el repositorio DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds" #Guardar las bases de datos
 DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds"))  #Guardar las bases de datos
 DTRAIN <- data.frame(readRDS("../Elementos_Guardados/train.rds"))
 View(DTRAIN)
+####---Normalización de palabras y caracteres---####
 
 #Se ponen en minúscula los caracteres de description y title en la base train
 DTRAIN$description<-str_to_lower(string=DTRAIN$description)
@@ -52,20 +54,27 @@ DTRAIN$title<-str_to_lower(string=DTRAIN$title)
 #Se ponen en minúscula los caracteres de description y title en la base test
 DTEST$description<-str_to_lower(string=DTEST$description)
 DTEST$title<-str_to_lower(string=DTEST$title)
+
 # Se eliminan las tildes
 DTRAIN$description <- iconv(DTRAIN$description, from = "UTF-8", to = "ASCII//TRANSLIT")
 DTEST$description <- iconv(DTEST$description, from = "UTF-8", to = "ASCII//TRANSLIT")
+
 # Se eliminan caracteres especiales
 DTRAIN$description <- str_replace_all(DTRAIN$description, "[^[:alnum:]]", " ")
 DTEST$description <- str_replace_all(DTEST$description, "[^[:alnum:]]", " ")
+
 # Se eliminan espacios extras
 DTRAIN$description <- gsub("\\s+", " ", str_trim(DTRAIN$description))
 DTEST$description <- gsub("\\s+", " ", str_trim(DTEST$description))
+
 #En esta sección se unen la base Train y test para realizar la limpieza de datos
+
 train<- DTRAIN %>% mutate(base = "train") #Se crea columna para identificar datos de train
 test <- DTEST %>% mutate(base="test") #Se crea columna para identificar datos de test
 HOUSE<- bind_rows(train,test) %>% st_as_sf(coords=c("lon","lat"),crs=4326)
 class(HOUSE)
+#Dado que el modelo se implementará para las localidades de Chapinero y El Poblado, dentro solo se utilizarán los datos de aquellos apartamentos que estén en las zonas ya mencionadas. 
+###---LIMPIEZA DE DATOS---###
 leaflet() %>% addTiles() %>% addCircles(data = HOUSE)
 str(HOUSE)
 Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
@@ -168,8 +177,6 @@ table(is.na( house_pob_mnz$new_surface_2))
 
 house_buf_Med <- st_buffer(House_Poblado,dist=0.008)
 
-#leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
-
 house_buf_Med<- st_join(house_buf_Med,House_Poblado[,"surface_total"])
 
 st_geometry(house_buf_Med) = NULL
@@ -184,113 +191,11 @@ table(is.na( house_pob_mnz$surface_new_3))
 
 rm(house_buf_Med, house_buf_mean_Med )
 
-
-
-
-####
-# HOUSE_Bog<- HOUSE[HOUSE$l3=="Bogotá D.C",]
-# House_BOG_mnz<- st_join(HOUSE_Bog, mnzBogota)
-# table(is.na(House_BOG_mnz$MANZ_CCNCT))
-# db_1 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==F)
-# db_2 <- House_BOG_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
-# leaflet() %>% addTiles() %>% addPolygons(data=db_2[1,] %>% st_buffer(dist = 0.0005))
-# db_2 <- st_join(st_buffer(db_2, dist = 0.0005), mnzBogota)%>% subset(duplicated(property_id)==F)
-# 
-# 
-# filtro<-is.na(House_BOG_mnz$MANZ_CCNCT)
-# House_BOG_mnz$MANZ_CCNCT[filtro]<-db_2$MANZ_CCNCT
-# table(is.na(House_BOG_mnz$MANZ_CCNCT))
-# 
-# House_BOG_mnz <-  House_BOG_mnz %>%
-#   group_by(MANZ_CCNCT) %>%
-#   mutate(new_surface_2=median(surface_total,na.rm=T))
-# 
-# table(is.na( House_BOG_mnz$new_surface_2))
-# 
-# house_buf_Bog <- st_buffer(House_BOG_mnz,dist=0.005)
-# 
-# leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Bog , color="red") %>% addCircles(data=House_BOG_mnz)
-# 
-# house_buf_Bog<- st_join(house_buf_Bog,HOUSE_Bog[,"surface_total"])
-# exportRDS(house_buf_Bog, "house_buf_Bog.rds")
-# readRDS("C:/Users/valer/Desktop/Andes/Intersemestral/Big Data/ArchivoPS3/house_buf_Bog.rds")
-# 
-# st_geometry(house_buf_Bog) = NULL
-# 
-# house_buf_mean_Bog <-house_buf_Bog %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
-# 
-# House_BOG_mnz<- left_join(House_BOG_mnz,house_buf_mean_Bog,"property_id")
-# 
-# table(is.na( House_BOG_mnz$new_surface_2))
-# table(is.na( House_BOG_mnz$surface_new_3))
-# 
-# rm(house_buf_Bog, house_buf_mean_Bog)
-# 
-# #Para Medellín
-# PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
-#                     featuretype = "boundary:administrative", 
-#                     format_out = "sf_polygon") 
-# 
-# leaflet() %>% addTiles() %>% addPolygons(data= PolPoblado, col = "red")
-# PolPoblado <- st_transform(PolPoblado, st_crs(HOUSE))
-# House_Poblado<- HOUSE[PolPoblado,]
-# available_features()
-# available_tags("amenity") 
-# mnzAnt<-readRDS("../Elementos_Guardados/Antioquia.rds") #Datos de manzanas Antioquia
-# sf_use_s2(FALSE)
-# mnzMedellin<-subset(mnzAnt, select=c("MANZ_CCNCT", "geometry"))
-# mnz_pob <- mnzMedellin[PolPoblado,]
-# 
-# leaflet() %>% addTiles() %>% addCircles(data = House_Poblado, color = "red" ) %>% addPolygons(data= mnz_pob, col = "blue")
-# ###
-# house_pob_mnz <- st_join(House_Poblado, mnz_pob)
-# colnames(house_pob_mnz)
-# ####
-# HOUSE_Med<- HOUSE[HOUSE$l3=="Medellín",]
-# house_pob_mnz <- st_join(HOUSE_Med, mnzMedellin)
-# table(is.na(house_pob_mnz$MANZ_CCNCT))
-# db_1M <- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==F)
-# db_2M<- house_pob_mnz %>% subset(is.na(MANZ_CCNCT)==T) %>% mutate(MANZ_CCNCT = NULL)
-# leaflet() %>% addTiles() %>% addPolygons(data=db_2M[1,] %>% st_buffer(dist = 0.0005))
-# db_2M <- st_join(st_buffer(db_2M, dist = 0.0009), mnzMedellin)%>% subset(duplicated(property_id)==F)
-# table(is.na(db_2M$MANZ_CCNCT))
-# 
-# filtro_Med<-is.na(house_pob_mnz$MANZ_CCNCT)
-# house_pob_mnz$MANZ_CCNCT[filtro_Med]<-db_2M$MANZ_CCNCT
-# table(is.na(house_pob_mnz$MANZ_CCNCT))
-# 
-# house_pob_mnz <-  house_pob_mnz %>%
-#   group_by(MANZ_CCNCT) %>%
-#   mutate(new_surface_2=median(surface_total,na.rm=T))
-# 
-# table(is.na( house_pob_mnz$new_surface_2))
-# 
-# house_buf_Med <- st_buffer(house_pob_mnz,dist=0.01)
-# 
-# leaflet() %>% addTiles() %>% addPolygons(data=house_buf_Med , color="red") %>% addCircles(data=house_pob_mnz)
-# 
-# house_buf_Med<- st_join(house_buf_Med,HOUSE_Med[,"surface_total"])
-# 
-# st_geometry(house_buf_Med) = NULL
-# 
-# house_buf_mean_Med <-house_buf_Med %>% group_by(property_id) %>% summarise(surface_new_3=mean(surface_total.y,na.rm=T))
-# 
-# house_pob_mnz<- left_join(house_pob_mnz,house_buf_mean_Med ,"property_id")
-# 
-# table(is.na( house_pob_mnz$new_surface_2))
-# table(is.na( house_pob_mnz$surface_new_3))
-# class(house_pob_mnz)
-
-
+##Se unen las dos bases de datos de área Chapinero y Área Bgototá
 HOUSEOF<- rbind.data.frame(house_pob_mnz, house_chapinero_mnz)
 view(HOUSEOF)
 table(is.na( HOUSEOF$surface_new_3))
 table(HOUSEOF$base)
-
-#new_test<- HOUSEOF[HOUSEOF$base=="test",] Código que se usó para validar qué observaciones habían quedado fuera del polígono, que hacían que la base test no fuese igual a la inicial
-#df<-DTEST %>% anti_join(new_test,by="property_id")
-
-
 
 #CREACIÓN VARIABLES POR MEDIO DE DESCRIPCIÓN PARA BASE DE DATOS
 Descripc<-HOUSEOF$description
@@ -310,8 +215,9 @@ summary(parqueaderoT)
 parqueaderoT[is.na(parqueaderoT)] = 0 #Se imputa cero a los datos NA, porque existen datos donde no había descripción
 summary(parqueaderoT)
 HOUSEOF <- cbind(HOUSEOF, parqueaderoT)
-#####
-#Vamos a crear la variable: Ascensor
+
+#Se creará la variable: Ascensor
+
 ascensorT_aux1<-str_detect( Descripc,"ascensor") 
 ascensorT_aux2<-str_detect( Descripc,"acensor") 
 ascensorT_aux3<-str_detect( Descripc,"asensor") 
@@ -328,7 +234,6 @@ summary(ascensorT)
 HOUSEOF <- cbind(HOUSEOF, ascensorT)
 
 
-#########
 #Para obtener los datos de los baños
 
 pat_1b <- "[:space:]+[:digit:]+[:space:]+baño" ## patrón para baños
@@ -379,7 +284,7 @@ pat_45b<-"[:space:]+[:digit:]+baos"
 pat_46b <- "bao+[:space:]+[:digit:]"
 pat_47b <- "baos+[:space:]+[:digit:]"
 
-
+HOUSEOF<-readRDS("../Elementos_Guardados/HOUSEOF.rds")
 HOUSEOF <- HOUSEOF  %>% 
   mutate(banio_tot= str_extract(string=HOUSEOF$description , pattern= paste0(pat_1b,"|",pat_2b,"|", pat_3b,"|", pat_4b,"|", pat_5b,"|", pat_6b,"|", pat_7b,"|", pat_8b,"|", pat_9b,"|", pat_10b,"|", pat_11b,"|", pat_12b,"|", pat_13b,"|", pat_14b,"|", pat_15b,"|", pat_16b,"|", pat_17b,"|", pat_18b,"|", pat_19b,"|", pat_20b,"|", pat_21b,"|", pat_22b,"|", pat_23b,"|", pat_24b,"|", pat_25b,"|", pat_26b,"|", pat_27b,"|", pat_28b,"|", pat_29b,"|", pat_30b,"|", pat_31b,"|", pat_32b,"|", pat_33b,"|", pat_34b,"|", pat_35b,"|", pat_36b,"|", pat_37b,"|", pat_38b,"|", pat_39b,"|", pat_40b,"|", pat_41b,"|", pat_42b,"|", pat_43b,"|", pat_44b,"|", pat_45b,"|", pat_46b,"|", pat_47b) ))
 
@@ -405,19 +310,9 @@ HOUSEOF$banio_tot<-as.numeric(HOUSEOF$banio_tot)
 View(HOUSEOF)
 HOUSEOF$banio_tot[is.na(HOUSEOF$banio_tot)] = 1 #Se imputa el número 1, teniendo en cuenta que por nivel de sanidad, debe existir al menos 1 baño en las viviendas
 summary(HOUSEOF$banio_tot) 
-HOUSEOF$bathrooms[is.na(HOUSEOF$bathrooms)] = 1
-new_banio_aux<-cbind(HOUSEOF$bathrooms, HOUSEOF$banio_tot)
-View(new_banio_aux)
-baniostot<-apply(new_banio_aux, 1 , max)
-baniostot<-data.frame(baniostot)
-View(baniostot)
-summary(baniostot)
-View(HOUSEOF)
-HOUSEOF<- cbind(HOUSEOF, baniostot)
-View(HOUSEOF)
-View(HOUSEOF)
-rm(baniostot)
-
+filtro2<-is.na(HOUSEOF$bathrooms)
+HOUSEOF$bathrooms[filtro2]<-HOUSEOF$banio_tot
+table(is.na(HOUSEOF$bathrooms))
 #Limpieza Habitaciones
 HOUSEOF$rooms[is.na(HOUSEOF$rooms)] = 1
 summary(HOUSEOF$rooms)
@@ -432,7 +327,7 @@ HOUSEOF<- cbind(HOUSEOF,habitaciones)
 View(HOUSEOF)
 rm(habitaciones)
 
-##================================================================================
+##====================================================
 
 ####----Creación de variables geoespacial----###
 Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
@@ -451,22 +346,6 @@ leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
 leaflet() %>% addTiles() %>% addCircles(data=PointChapinero)
 ## la función addTiles adiciona la capa de OpenStreetMap
 leaflet() %>% addTiles() %>% addCircles(data=PointElPoblado)
-
-
-#Poligono chapinero
-# Polchapinero <- getbb(place_name = "UPZ Chapinero, Bogota", 
-#                       featuretype = "boundary:administrative", 
-#                       format_out = "sf_polygon") %>% .$multipolygon
-# leaflet() %>% addTiles() %>% addPolygons(data= Polchapinero, col = "blue")%>% 
-#   addCircleMarkers(data=DTRAIN_sf_mapa, col= "red")
-# #Poligono poblado
-# PolPoblado <- getbb(place_name = "Comuna 14 - El Poblado, Medellín", 
-#                     featuretype = "boundary:administrative", 
-#                     format_out = "sf_polygon") %>% .$multipolygon
-# leaflet() %>% addTiles() %>% addPolygons(data= Poblado, col = "blue")%>% 
-#   addCircleMarkers(data=DTRAIN_sf, col= "red")
-
-
 
 #Atributos
 #Puede acceder a la lista de features disponibles en OSM aquí. En R puede obtener un vector con los nombres de los features usando la función available_features():
@@ -617,17 +496,21 @@ porcentaje_na #Visualizo el porcentaje de los datos que tienen NA
 #Para guardar la base de datos
 saveRDS(HOUSEOF, "../Elementos_Guardados/HOUSEOF.rds" )
 
-HOUSEM<-subset(HOUSEOF, select=c("property_id", "l3", "property_type", "price", "surface_new_3", "MANZ_CCNCT", "geometry", "parqueaderoT", "ascensorT", "baniostot", "habitaciones", "base", "min_dist_bar_", "min_dist_transp_", "min_dist_park"))
+HOUSEM<-subset(HOUSEOF, select=c("property_id", "l3", "property_type", "price", "surface_new_3", "MANZ_CCNCT", "geometry", "parqueaderoT", "ascensorT", "bathrooms", "habitaciones", "base", "min_dist_bar_", "min_dist_transp_", "min_dist_park"))
+#La base de datos oficial de trabajo es HOUSEM, en donde existen 24843 observaciones (Base de entrenamiento y base de testeo)
 #Para guardar la base de datos
 saveRDS(HOUSEM, "../Elementos_Guardados/HOUSEM.rds" )
 
-DTRAINHOUSE<- HOUSEM[HOUSEM$base=="test",]
-DTESTHOUSE<- HOUSEM[HOUSEM$base=="train",]
-#Para guardar la base de datos
+DTRAINHOUSE<- HOUSEM[HOUSEM$base=="train",]
+DTESTHOUSE<- HOUSEM[HOUSEM$base=="test",]
+#La base de datos de entrenamiento cuenta con 13693 observaciones.
+#La base de datos de testeo cuenta con 11150 observaciones
+
+#---Para guardar la base de datos---#
+
 saveRDS(DTRAINHOUSE, "../Elementos_Guardados/DTRAINHOUSE.rds" )
 saveRDS(DTESTHOUSE, "../Elementos_Guardados/DTESTHOUSE.rds" )
 
-######------------------############
 #########----Descripción de variables----#####
 ###Ubicación del inmueble
 Ubicación <- HOUSEM$l3
@@ -656,8 +539,7 @@ modehabitaciones(habitaciones)
 summary(habitaciones)
 rm(habitaciones)
 #Descripción baños
-HOUSEOF<- readRDS( "../Elementos_Guardados/HOUSEOF.rds")
-baños <- as.numeric(HOUSEM$baniostot) 
+baños <- as.numeric(HOUSEM$bathrooms) 
 class(baños)
 plot(hist(baños),col = "red", main="Histograma No. de baños de la vivienda",
      xlab="Habitaciones",
@@ -721,4 +603,5 @@ summary(Parques)
 modeParques <- function(Parques){
   return(as.numeric(names(which.max(table(Parques)))))}
 modeParques(Parques)
+rm(Parques)
 
