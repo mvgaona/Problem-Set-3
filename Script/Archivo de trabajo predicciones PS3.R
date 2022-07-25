@@ -19,18 +19,13 @@ p_load(caret,
        tidymodels,
        ggplot2,
        scales,
-       ggpubr,
-       skimr,
        rvest,
        caret,
        stringr,
        boot,
        caret,
        modeest,
-       recipes,
-       glmnet,
        stargazer,
-       pROC, 
        sf,
        leaflet,
        tmaptools,
@@ -59,6 +54,10 @@ DTRAIN_H<-DTRAIN_H%>% mutate(Medellin = ifelse(l3=="Medellín", 1,0))
 
 DTEST_H<-DTEST_H%>% mutate(Apto = ifelse(property_type=="Apartamento", 1,0))
 DTRAIN_H<-DTRAIN_H%>% mutate(Apto = ifelse(property_type=="Apartamento", 1,0))
+
+DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds")) #Se importa el archivo original enviado por el profesor, para tomar de referencia el orden del property ID
+
+
 
 #Se realizarán xx modelos para realizar las predicciones del precio de las viviendas, el modelo con menor MSE será con el cual se realizará la predicción en la base Test
 
@@ -478,7 +477,7 @@ ggplot(data=sqrt_MSE_errores, aes(x = modelos_, y = sqrt_MSE_modelos, group=1)) 
   geom_line()+   geom_point()+  labs(title = "Comparación diferentes modelos en términos de sqrt_MSE") 
 
 #=====================================
-#De acuerdo a la comparación de los 16 modelos, el modelo modelo3_forest con 10 variables explicativas es el cual tiene la mejor proporción de dinero invertido/viviendas comparas. 
+#De acuerdo a la comparación de los 12 modelos, el modelo modelo3_forest con 10 variables explicativas es el cual tiene la mejor proporción de dinero invertido/viviendas comparas. 
 #Por lo tanto, Se realiza la predicción con el modelo modelo3_forest en la base DTEST_H 
 Predicciones_PreciosViv <- predict(modelo3_forest,  newdata = DTEST_H)
 Predicciones_PreciosViv <- data.frame (Predicciones_PreciosViv)
@@ -486,5 +485,17 @@ View(Predicciones_PreciosViv)
 Predicciones_PreciosViv <- cbind(DTEST_H$property_id ,Predicciones_PreciosViv)
 View(Predicciones_PreciosViv)
 View(cbind(DTEST_H$property_id, Predicciones_PreciosViv$`DTEST_H$property_id`))
+
+colnames(Predicciones_PreciosViv) <- c('property_id','price')
+
+Property_id_or<-DTEST$property_id
+Property_id_or<- data.frame (Property_id_or)
+colnames(Property_id_or) <- c('property_id','price')
+Predicciones_PreciosViv <- cbind(Predicciones_PreciosViv, Property_id_or)
+rm (Predicciones_PreciosViv)
+
+Property_id_or<-left_join(Property_id_or, Predicciones_PreciosViv, by="property_id" )
+
+colnames(Predicciones_PreciosViv) <- c('property_id','price')
 saveRDS(Predicciones_PreciosViv, "../Elementos_Guardados/Predicciones.rds")
 write.csv (Predicciones_PreciosViv, "../Elementos_Guardados/predictions_beleno_gaona.csv")
