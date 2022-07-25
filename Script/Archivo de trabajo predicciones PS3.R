@@ -72,10 +72,7 @@ Diferencia_mod1a<-data.frame(Diferencia_mod1a)
 MSE_mod1a<- mean(sqrt((predicciones_mod1a - DTRAIN_H$price)^2))
 
 require(stargazer)
-stargazer(modelo1)
-
-
-
+stargazer(modelo1a)
 
 #Modelo 2 Lasso
 
@@ -480,3 +477,14 @@ sqrt_MSE_errores<-data.frame(modelos_,sqrt_MSE_modelos)
 ggplot(data=sqrt_MSE_errores, aes(x = modelos_, y = sqrt_MSE_modelos, group=1)) + 
   geom_line()+   geom_point()+  labs(title = "Comparación diferentes modelos en términos de sqrt_MSE") 
 
+#=====================================
+#De acuerdo a la comparación de los 16 modelos, el modelo modelo3_forest con 10 variables explicativas es el cual tiene la mejor proporción de dinero invertido/viviendas comparas. 
+#Por lo tanto, Se realiza la predicción con el modelo modelo3_forest en la base DTEST_H 
+Predicciones_PreciosViv <- predict(modelo3_forest,  newdata = DTEST_H)
+Predicciones_PreciosViv <- data.frame (Predicciones_PreciosViv)
+View(Predicciones_PreciosViv)
+Predicciones_PreciosViv <- cbind(DTEST_H$property_id ,Predicciones_PreciosViv)
+View(Predicciones_PreciosViv)
+View(cbind(DTEST_H$property_id, Predicciones_PreciosViv$`DTEST_H$property_id`))
+saveRDS(Predicciones_PreciosViv, "../Elementos_Guardados/Predicciones.rds")
+write.csv (Predicciones_PreciosViv, "../Elementos_Guardados/predictions_beleno_gaona.csv")
