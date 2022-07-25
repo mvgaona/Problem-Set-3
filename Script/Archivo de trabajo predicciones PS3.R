@@ -496,6 +496,6 @@ rm (Predicciones_PreciosViv)
 
 Property_id_or<-left_join(Property_id_or, Predicciones_PreciosViv, by="property_id" )
 
-colnames(Predicciones_PreciosViv) <- c('property_id','price')
-saveRDS(Predicciones_PreciosViv, "../Elementos_Guardados/Predicciones.rds")
-write.csv (Predicciones_PreciosViv, "../Elementos_Guardados/predictions_beleno_gaona.csv")
+colnames(Property_id_or) <- c('property_id','price')
+saveRDS(Property_id_or, "../Elementos_Guardados/Predicciones.rds")
+write.csv (Property_id_or, "../Elementos_Guardados/predictions_beleno_gaona.csv")
