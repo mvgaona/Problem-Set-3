@@ -512,6 +512,8 @@ saveRDS(DTRAINHOUSE, "../Elementos_Guardados/DTRAINHOUSE.rds" )
 saveRDS(DTESTHOUSE, "../Elementos_Guardados/DTESTHOUSE.rds" )
 
 #########----Descripción de variables----#####
+#Si se desea realizar la descripción de variables sin necesidad de correr todo el código anterior, se carga la base de datos HOUSEM y así, se procede a realizarse el análisis.
+HOUSEM <- readRDS("../Elementos_Guardados/HOUSEM.rds")
 ###Ubicación del inmueble
 Ubicación <- HOUSEM$l3
 class(Ubicación)
@@ -553,14 +555,14 @@ modebaños(baños)
 summary(baños)
 rm(baños)
 #Ascensor
-Ascensor <- as.factor(HOUSEOF$ascensorT)
+Ascensor <- as.factor(HOUSEM$ascensorT)
 class(Ascensor)
 skim(Ascensor)
 Ascensor <- factor(Ascensor, labels = c("1", "0"))
 summary(Ascensor)
 rm(Ascensor)
 #Parqueadero
-Parqueadero <- as.factor(HOUSEOF$parqueaderoT)
+Parqueadero <- as.factor(HOUSEM$parqueaderoT)
 class(Parqueadero)
 Parqueadero <- factor(Parqueadero, labels = c("1", "0"))
 summary(Parqueadero)
