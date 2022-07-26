@@ -67,8 +67,6 @@ Dentro del proceso de recolección de datos puede ocurrir que no se encuentren t
 
 \section{Mapas}
 Los  mapas de la localidad de Chapinero en Bogotá y El Poblado en Medellín, presentados en las Figuras ~\ref{fig_1} y ~\ref{fig_2}, evidencian la distribución de bares, estaciones de buses, y parques que se encuentran en cada uno de los sectores, junto con las viviendas que se encuentran en las localidades anteriormente mencionadas. Esto permite contar con un análisis gráfico de cada vivienda y así, un comprador, por ejemplo, puede contar con información gráfica que le permite tomar decisiones de manera informada.
-
-
 \begin{figure}[htbp]
 \centerline{\includegraphics[width=0.4\textwidth]{../Vistas/Mapa_Chapinero_2.2.png}}
 \caption{Mapa Chapinero, Bogotá- \textit{Polígono color azul, apartamentos en rojo, transp. público en morado, parques en verde y naranja para bares}}
@@ -82,28 +80,22 @@ Los  mapas de la localidad de Chapinero en Bogotá y El Poblado en Medellín, pr
 \end{figure}
 
 \section{Modelo y Resultados}
-
-Con base en las variables presentadas en la sección \ref{AA}, se procedió a realizar varios modelos para determinar cuál era el más apropiado para realizar la predicción de precio de viviendas. Se analizó la posibilidad de partir la base \textit{train} en un \textit{subtrain} y \textit{subtest}, sin embargo, teniendo en cuenta que la base de \textit{test} original cuenta con 11.150 observaciones, realizar la subdivisión de \textit{train} en un menor número de muestras, podría ir en perjuicio de la predicción, al utilizar incluso menos datos que la base \textit{test} principal, por lo cual, se decidió realizar implementar los modelos sobre la base \textit{train} reducida. En primera instancia, se realizó un modelo de regresión con \textit{OLS}, tomando las 10 variables presentadas anteriormente, luego, se realizó la regularización de Lasso para la regresión OLS. Adicionalmente, se realizaron los modelos \textit{Random Forest} y \textit{XGBoost}, teniendo en cuenta las variables mencionadas anteriormente. Se pretendió utilizar el algoritmo de \textit{SuperLearner} para realizar la predicción, sin embargo, no funcionó correctamente.\\
-A manera ilustrativa, se presentará el modelo OLS utilizado contemplando las 10 variables.
-
+Con base en las variables presentadas en la sección \ref{AA}, se procedió a realizar varios modelos para determinar cuál era el más apropiado para realizar la predicción de precio de viviendas. Se analizó la posibilidad de partir la base \textit{train} en un \textit{subtrain} y \textit{subtest}, sin embargo, teniendo en cuenta que la base de \textit{test} original cuenta con 11.150 observaciones, realizar la subdivisión de \textit{train} en un menor número de muestras, podría ir en perjuicio de la predicción, al utilizar incluso menos datos que la base \textit{test} principal, por lo cual, se decidió realizar implementar los modelos sobre la base \textit{train} reducida. En primera instancia, se realizó un modelo de regresión con \textit{OLS} (modelo 1), tomando las 10 variables presentadas anteriormente, luego, se realizó la regularización de Lasso para la regresión OLS U (modelo 2). Adicionalmente, se realizaron los modelos \textit{Random Forest} (modelo 3) y \textit{XGBoost} (modelo 4), teniendo en cuenta las variables mencionadas anteriormente. A manera ilustrativa, se presentará el modelo OLS utilizado contemplando las 10 variables.
 \begin{multline*}
-price= \beta_{0}+\beta_{1}Ubicacion+\beta_{2}Tipo-vivienda+\beta_{3}Habitac.+\\
+Price= \beta_{0}+\beta_{1}Ubicacion+\beta_{2}Tipo-vivienda+\beta_{3}Habitac.+\\
 \beta_{4}Banios+\beta_{5}Ascensor+\beta_{6}Parqueadero+\beta_{7}Area+\\
 \beta_{8}Dist.Transp.Pub.+\beta_{9}Dist.bares+\beta_{10}Dist.parques+u \\
 \end{multline*}
-
 Luego de correr los modelos, la significancia de las variables variaba de un modelo a otro, por ejemplo, para \textit{OLS} existían 5 variables más significativas para el modelo vs las que se obtuvieron en \textit{Random Forest} que fueron 6 con mayor peso para el modelo. A continuación se presentarán las variables relevantes obtenidas en \textit{OLS}:
-
 \begin{itemize}
 \item \textit{Habitación}, \textit{Baños}, \textit{Área}, \textit{Área}, \textit{Distancia a bares}, \textit{Distancia a transporte público} 
 \end{itemize}
-
 A continuación se presentarán las variables relevantes obtenidas en \textit{Random Forest}:
 \begin{itemize}
 \item \textit{Habitación}, \textit{Baños}, \textit{Área}, \textit{Área}, \textit{Distancia a bares}, \textit{Distancia a transporte público},  \textit{Distancia a parques}
 \end{itemize}
-
-Utilizando las variables presentadas anteriormente, se corrieron los modelos mencionados incialmente (\textit{OLS}, \textit{Lasso}, \textit{Random Forest}, \textit{XGBoost}, es decir, se contó con 12 modelos. Al hacer la comparación de la raíz cuadrada del MSE, se obtuvo que para los modelos incluyendo las 10 variables se presentó el menor MSE. En la Figura ~\ref{fig_3} , se presenta la comparación de los primeros 4 modelos con las 10 variables en términos de la raíz del MSE para tener una primera aproximación de cuál modelo escoger. Ahora bien, existen otros temas relevantes a tener en cuenta para decidir cuál modelo se debe escoger para realizar la predicción, como lo es la relación de dinero para compra vs. la cantidad de viviendas compradas. Se realizó la comparación de cada set de modelos, con las 10, 5 y 6 variables, de lo cual se obtuvo la información presentada en el Cuadro ~\ref{tab_11}. Lo anterior, para concluir que el mejor modelo para realizar la predicción fue el de \textit{Random Forest} con 10 variables. Finalmente, la predicción obtenida se guardó en el archivo .csv solicitado.
+Utilizando las variables presentadas anteriormente, se corrieron los modelos mencionados incialmente (\textit{OLS}, \textit{Lasso}, \textit{Random Forest}, \textit{XGBoost}, es decir, se contó con 16 modelos. Al hacer la comparación de la raíz cuadrada del MSE, se obtuvo que para los modelos incluyendo las 10 variables se presentó el menor MSE. El modelo de \textit{Random Forest} fue entrenado variando el número de árboles, para el cual se obtuvo un valor de $n.trees=1000$.\\
+En la Figura ~\ref{fig_3} , se presenta la comparación de los primeros 4 modelos con las 10 variables en términos de la raíz del MSE para tener una primera aproximación de cuál modelo escoger. Ahora bien, existen otros temas relevantes a tener en cuenta para decidir cuál modelo se debe escoger para realizar la predicción, como lo es la relación de dinero para compra vs. la cantidad de viviendas compradas, que se escoge el de menor ratio, porque para esos casos se compran más viviendas a un costo menor. Se realizó la comparación de cada set de modelos, con las 10, 5 y 6 variables, de lo cual se obtuvo la información presentada en el Cuadro ~\ref{tab_11}. Lo anterior, para concluir que el mejor modelo para realizar la predicción fue el de \textit{Random Forest} con 10 variables. Finalmente, la predicción obtenida se guardó en el archivo .csv solicitado.
 \\
 
 \begin{figure}[htbp]
@@ -112,18 +104,12 @@ Utilizando las variables presentadas anteriormente, se corrieron los modelos men
 \label{fig_3}
 \end{figure}
 
-
-De lo cual se tienen las siguientes conclusiones:
-
-
-
 \section{Conclusiones y recomendaciones}
-
 \begin{itemize}
-\item Se encontró que para los modelos tanto en clasificación como en regresión, la variable \textit{Dominio} fue significativa para la predicción.
+\item Fue un reto bastante interesante obtener los datos geográficos para utilizarlos como predictores, teniendo en cuenta 
 \item Se encontraron diferencias significativas en cuanto a la predicción por clasificación y por regresión a través del ingreso. Los parámetros utilizados para realizar la clasificación de Pobre o No Pobre, puede incidir.
 \item La regresión del Ingreso presentó un MSE alto para todos los modelos, motivo por el cual, se puede estar dando este resultado en donde hay pobres clasificados como no pobres.
-\item Los resultados más aceptables para el ejercicio, tanto de clasificación como de regresión, fueron los que tuvieron en cuenta mayor cantidad de variables que pudiesen explicar las variables dependientes en cada caso.
+\item Los resultados más aceptables para el ejercicio fueron los que tuvieron en cuenta mayor cantidad de variables para obtener la predicción (variable dependiente).
 \end{itemize}
 
 
@@ -302,6 +288,81 @@ De lo cual se tienen las siguientes conclusiones:
 \label{tab_10}
 \end{center}
 \end{table}
+
+\begin{table}[htbp]
+\caption{Evaluación Modelos Variables 10}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\multicolumn{4}{|c|}{\textbf{Distancia parques (m)}} \\
+\cline{1-4} 
+\hline
+\textbf{OLS}&\textbf{Lasso}&\textbf{RF, n=5}&\textbf{RF, n=1000}\\
+\hline
+ 0,4975&230,5497&1.567,7500&478,1448\\
+ 	\hline
+\end{tabular}
+\label{tab_10}
+\end{center}
+\end{table}
+
+
+% Table created by stargazer v.5.2.3 by Marek Hlavac, Social Policy Institute. E-mail: marek.hlavac at gmail.com
+% Date and time: lun., jul. 25, 2022 - 10:28:47 p. m.
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{1}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-2} 
+\\[-1.8ex] & price \\ 
+\hline \\[-1.8ex] 
+ factor(Medellin)1 & $-$787,636,375.000$^{***}$ \\ 
+  & (61,083,213.000) \\ 
+  & \\ 
+ factor(Apto)1 & 207,203,199.000$^{***}$ \\ 
+  & (34,086,495.000) \\ 
+  & \\ 
+ factor(parqueaderoT)1 & $-$63,801,814.000$^{***}$ \\ 
+  & (13,453,959.000) \\ 
+  & \\ 
+ factor(ascensorT)1 & 124,196,586.000$^{***}$ \\ 
+  & (14,752,857.000) \\ 
+  & \\ 
+ bathrooms & 153,238,037.000$^{***}$ \\ 
+  & (5,325,096.000) \\ 
+  & \\ 
+ habitaciones & 317,659,483.000$^{***}$ \\ 
+  & (7,138,710.000) \\ 
+  & \\ 
+ min\_dist\_bar\_ & $-$13,904.660 \\ 
+  & (25,102.360) \\ 
+  & \\ 
+ min\_dist\_transp\_ & 526,386.800$^{***}$ \\ 
+  & (16,935.530) \\ 
+  & \\ 
+ min\_dist\_park & $-$720,497.400$^{***}$ \\ 
+  & (62,258.320) \\ 
+  & \\ 
+ surface\_new\_3 & 123,250.800$^{***}$ \\ 
+  & (36,015.530) \\ 
+  & \\ 
+ Constant & $-$463,068,798.000$^{***}$ \\ 
+  & (44,297,272.000) \\ 
+  & \\ 
+\hline \\[-1.8ex] 
+Observations & 13,693 \\ 
+R$^{2}$ & 0.370 \\ 
+Adjusted R$^{2}$ & 0.369 \\ 
+Residual Std. Error & 720,926,630.000 (df = 13682) \\ 
+F Statistic & 802.327$^{***}$ (df = 10; 13682) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{1}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
 
 
 \end{document}

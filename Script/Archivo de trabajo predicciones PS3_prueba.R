@@ -43,7 +43,7 @@ require("tidyverse")
 DTEST_H<-data.frame(readRDS("../Elementos_Guardados/DTESTHOUSE.rds"))  #Guardar las bases de datos
 DTRAIN_H <- data.frame(readRDS("../Elementos_Guardados/DTRAINHOUSE.rds"))
 
-#Se elimina la columna de precio en la base Dtest_H
+#Se elimina la columna de precio en la base Dtest 
 DTEST_H<-DTEST_H%>% mutate(price = NULL)
 
 #Se crean las variables Dummies para la ciudad (Bogotá o Medellin) y para el tipo de propiedad (Casa o Apartamento)
@@ -68,7 +68,7 @@ modelo1a <- lm(price ~ factor(Medellin) + factor(Apto) + factor(parqueaderoT) + 
 predicciones_mod1a <- predict(modelo1a, newdata = DTRAIN_H)
 Diferencia_mod1a <- (predicciones_mod1a - DTRAIN_H$price)
 Diferencia_mod1a<-data.frame(Diferencia_mod1a)
-MSE_mod1a<- sqrt(mean((predicciones_mod1a - DTRAIN_H$price)^2))
+MSE_mod1a<- mean(sqrt((predicciones_mod1a - DTRAIN_H$price)^2))
 
 require(stargazer)
 stargazer(modelo1a)
@@ -115,27 +115,175 @@ Diferencia_mod2<-data.frame(Diferencia_mod2)
 set.seed(10101)
 
 
-modelo3_forest <- ranger(
+modelo3_forest <- randomForest(
   price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
   data = DTRAIN_H,
   num.trees = 5,
-  write.forest = TRUE #Para calcular la prediccón
+  write.forest = TRUE
 )
 
-modelo3_forest_ <- randomForest(
-  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
-  data = DTRAIN_H,
-  num.trees = 5,
-  write.forest = TRUE #Para obtener las variables importantes
-)
+varImp(modelo3_forest,scale=TRUE)
 
-varImp(modelo3_forest_,scale=TRUE)
-
-predicciones_mod3_rf_completo<-predict(modelo3_forest, data = DTRAIN_H)$predictions
+predicciones_mod3_rf_completo<-predict(modelo3_forest, data = DTRAIN_H)
 
 MSE_mod3 <- sqrt(mean((predicciones_mod3_rf_completo-DTRAIN_H$price)^2))
 Diferencia_mod3 <- (predicciones_mod3_rf_completo - DTRAIN_H$price)
 Diferencia_mod3<-data.frame(Diferencia_mod3)
+
+modelo3_forest2 <- randomForest(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 10,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest2,scale=TRUE)
+
+predicciones_mod3_rf_completo2<-predict(modelo3_forest2, data = DTRAIN_H)
+
+MSE_mod32 <- sqrt(mean((predicciones_mod3_rf_completo2-DTRAIN_H$price)^2))
+Diferencia_mod32 <- (predicciones_mod3_rf_completo2 - DTRAIN_H$price)
+Diferencia_mod32<-data.frame(Diferencia_mod32)
+
+modelo3_forest3 <- randomForest(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 15,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest3,scale=TRUE)
+
+predicciones_mod3_rf_completo3<-predict(modelo3_forest3, data = DTRAIN_H)
+
+MSE_mod33 <- sqrt(mean((predicciones_mod3_rf_completo3-DTRAIN_H$price)^2))
+Diferencia_mod33 <- (predicciones_mod3_rf_completo3 - DTRAIN_H$price)
+Diferencia_mod33<-data.frame(Diferencia_mod33)
+
+modelo3_forest4 <- randomForest(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 20,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest4,scale=TRUE)
+
+predicciones_mod3_rf_completo4<-predict(modelo3_forest4, data = DTRAIN_H)
+
+MSE_mod34 <- sqrt(mean((predicciones_mod3_rf_completo4-DTRAIN_H$price)^2))
+Diferencia_mod34 <- (predicciones_mod3_rf_completo4 - DTRAIN_H$price)
+Diferencia_mod34<-data.frame(Diferencia_mod34)
+
+
+
+modelo3_forest_r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 5,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest_r,scale=TRUE)
+
+predicciones_mod3_rf_completo_r<-predict(modelo3_forest_r, data = DTRAIN_H)$predictions
+
+MSE_mod3_r <- sqrt(mean((predicciones_mod3_rf_completo_r-DTRAIN_H$price)^2))
+Diferencia_mod3_r <- (predicciones_mod3_rf_completo_r - DTRAIN_H$price)
+Diferencia_mod3_r<-data.frame(Diferencia_mod3_r)
+
+modelo3_forestr2 <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 10,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forestr2,scale=TRUE)
+
+predicciones_mod3_rf_completor2<-predict(modelo3_forestr2, data = DTRAIN_H)$predictions
+
+MSE_mod32r <- sqrt(mean((predicciones_mod3_rf_completor2-DTRAIN_H$price)^2))
+Diferencia_mod32r <- (predicciones_mod3_rf_completor2 - DTRAIN_H$price)
+Diferencia_mod32r<-data.frame(Diferencia_mod32r)
+
+modelo3_forest3r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 15,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest3r,scale=TRUE)
+
+predicciones_mod3_rf_completo3r<-predict(modelo3_forest3r, data = DTRAIN_H)$predictions
+
+MSE_mod33r <- sqrt(mean((predicciones_mod3_rf_completo3r-DTRAIN_H$price)^2))
+Diferencia_mod33r <- (predicciones_mod3_rf_completo3r - DTRAIN_H$price)
+Diferencia_mod33r<-data.frame(Diferencia_mod33r)
+
+modelo3_forest4r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 20,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest4r,scale=TRUE)
+
+predicciones_mod3_rf_completo4r<-predict(modelo3_forest4r, data = DTRAIN_H)$predictions
+
+MSE_mod34r <- sqrt(mean((predicciones_mod3_rf_completo4r-DTRAIN_H$price)^2))
+Diferencia_mod34r <- (predicciones_mod3_rf_completo4r - DTRAIN_H$price)
+Diferencia_mod34r<-data.frame(Diferencia_mod34r)
+
+modelo3_forest5r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 25,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest5r,scale=TRUE)
+
+predicciones_mod3_rf_completo5r<-predict(modelo3_forest5r, data = DTRAIN_H)$predictions
+
+MSE_mod35r <- sqrt(mean((predicciones_mod3_rf_completo5r-DTRAIN_H$price)^2))
+Diferencia_mod35r <- (predicciones_mod3_rf_completo5r - DTRAIN_H$price)
+Diferencia_mod35r<-data.frame(Diferencia_mod35r)
+
+modelo3_forest6r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 35,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest6r,scale=TRUE)
+
+predicciones_mod3_rf_completo6r<-predict(modelo3_forest6r, data = DTRAIN_H)$predictions
+
+MSE_mod36r <- sqrt(mean((predicciones_mod3_rf_completo6r-DTRAIN_H$price)^2))
+Diferencia_mod36r <- (predicciones_mod3_rf_completo6r - DTRAIN_H$price)
+Diferencia_mod36r<-data.frame(Diferencia_mod36r)
+
+
+modelo3_forest7r <- ranger(
+  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
+  data = DTRAIN_H,
+  num.trees = 1000,
+  write.forest = TRUE
+)
+
+varImp(modelo3_forest7r,scale=TRUE)
+
+predicciones_mod3_rf_completo7r<-predict(modelo3_forest7r, data = DTRAIN_H)$predictions
+
+MSE_mod37r <- sqrt(mean((predicciones_mod3_rf_completo7r-DTRAIN_H$price)^2))
+Diferencia_mod37r <- (predicciones_mod3_rf_completo7r - DTRAIN_H$price)
+Diferencia_mod37r<-data.frame(Diferencia_mod37r)
+
+
 
 #Modelo 4 - XGBoost
 
@@ -144,7 +292,7 @@ xgb_test <- xgb.DMatrix(data = x_traina, label = y_traina) #Como se está hacien
 
 watchlist <-list(train=xgb_train, test=xgb_test)
 
-model4<- xgb.train(data = xgb_train, max.depth = 3, watchlist=watchlist, nrounds = 100)
+model4<- xgb.train(data = xgb_train, max.depth = 100, watchlist=watchlist, nrounds = 1000)
 
 summary(model4)
 predicciones_mod4 <-predict(model4, xgb_test) #El xgb_test corresponde a la misma base train
@@ -153,7 +301,59 @@ MSE_mod4 <- sqrt(mean((predicciones_mod4-DTRAIN_H$price)^2))
 Diferencia_mod4 <- (predicciones_mod4 - DTRAIN_H$price)
 Diferencia_mod4<-data.frame(Diferencia_mod4)
 
-#==========================================================================================================================
+#Modelo- Superlearner
+#==========================================================================================================================================================
+folds = 5
+
+x_SL<-subset(DTRAIN_H, select=c("Medellin", "Apto", "parqueaderoT", "ascensorT", "bathrooms","habitaciones", "min_dist_bar_","min_dist_transp_", "min_dist_park", "surface_new_3"))
+Y_SL<-DTRAIN_H$price
+
+D <- data.frame(x_SL, Y_SL)
+index <- list(2739,2739,2739,2738,2738)
+splt <- lapply(1:folds, function(ind) D[index[[ind]], ])
+
+
+
+library(SuperLearner)
+
+# fitY <- SuperLearner(Y = Y_SL, X = data.frame(x_SL),
+#                      method = "method.NNLS", SL.library = c("SL.lm", "SL.ranger"),
+#                      cvControl = list(V = folds, validRows = index))
+# 
+# fitY #Este código no sirvió
+
+m1 <- lapply(1:folds, function(ii) lm(Y_SL ~Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park, data = rbindlist(splt[-ii])))
+m2 <- lapply(1:folds, function(ii) ranger(Y_SL ~Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park,data = rbindlist(splt[-ii])))
+
+
+p1 <- lapply(1:folds, function(ii) predict(m1[[ii]], newdata = rbindlist(splt[ii])))
+p2 <- lapply(1:folds, function(ii) predict(m2[[ii]], data = rbindlist(splt[ii]))$predictions)
+
+for (i in 1:folds) {
+splt[[i]] <- cbind(splt[[i]], p1[[i]],
+                   p2[[i]])
+}
+
+head(splt[[1]])
+
+risk1 <- lapply(1:folds, function(ii) mean((splt[[ii]][,10] - splt[[ii]][, 11])^2))
+risk2 <- lapply(1:folds, function(ii) mean((splt[[ii]][, 10] - splt[[ii]][, 12])^2))
+
+a <- rbind(cbind("lm", mean(do.call(rbind, risk1), na.rm = T)),
+           cbind("RF", mean(do.call(rbind,risk2), na.rm = T)))
+a
+
+X_ <- data.frame(do.call(rbind, splt))[, -1]
+
+summary(X_)
+X_<-subset(X_,  select=c("Y_SL","p1..i..", "p2..i..") )
+names(X_) <- c("y", "lm", "RF")
+head(X_)
+
+SL.r <- nnls(cbind(X_[, 2], X_[, 3]), X_[, 1])$x
+alpha <- as.matrix(SL.r/sum(SL.r))
+alpha #Prueba y error: A nuestro criterio, el Super learner no funcionó
+#====================================================================================================================
 
 ### Clasificación  de modelos por evaluación de compra
 
@@ -179,12 +379,21 @@ view(Precio_tot_mod3)
 Zeros_mod3<-ifelse(Precio_compra_mod3==0,TRUE, FALSE)
 table(Zeros_mod3)#La cantidad de falsos (diferente de cero) son las propiedades compradas
 
+rm(Precio_compra_mod4,Zeros_mod4,Precio_tot_mod4 )
 Precio_compra_mod4<-ifelse(Diferencia_mod4<=-40000000,0, predicciones_mod4  )
 Precio_compra_mod4<-data.frame(Precio_compra_mod4)
 Precio_tot_mod4<-colSums(Precio_compra_mod4)
 view(Precio_tot_mod4)
 Zeros_mod4<-ifelse(Precio_compra_mod4==0,TRUE, FALSE)
 table(Zeros_mod4) #La cantidad de falsos (diferente de cero) son las propiedades compradas
+
+
+Precio_compra_mod3<-ifelse(Diferencia_mod37r<=-40000000,0, predicciones_mod3_rf_completo7r  )
+Precio_compra_mod3<-data.frame(Precio_compra_mod3)
+Precio_tot_mod3<-colSums(Precio_compra_mod3)
+view(Precio_tot_mod3)
+Zeros_mod3<-ifelse(Precio_compra_mod3==0,TRUE, FALSE)
+table(Zeros_mod3)#La cantidad de falsos (diferente de cero) son las propiedades compradas
 
 
 #############################################################################################################
@@ -197,7 +406,7 @@ modelo1b <- lm(price ~  bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+mi
 predicciones_mod1b <- predict(modelo1b, newdata = DTRAIN_H)
 Diferencia_mod1b <- (predicciones_mod1b - DTRAIN_H$price)
 Diferencia_mod1b<-data.frame(Diferencia_mod1b)
-MSE_mod1b<- sqrt(mean((predicciones_mod1b - DTRAIN_H$price)^2))
+MSE_mod1b<- mean(sqrt((predicciones_mod1b - DTRAIN_H$price)^2))
 
 
 #Modelo 2c Lasso
@@ -233,7 +442,7 @@ modelo2_Lasso_fb <- glmnet(
 )
 
 predicciones_train_mod2_Lass_fb <- predict(modelo2_Lasso_fb, newx = x_trainb)
-MSE_mod2b <- sqrt(mean((predicciones_train_mod2_Lass_fb -y_trainb)^2))
+MSE_mod2b <- mean(sqrt((predicciones_train_mod2_Lass_fb -y_trainb)^2))
 Diferencia_mod2b <- (predicciones_train_mod2_Lass_fb - DTRAIN_H$price)
 Diferencia_mod2b<-data.frame(Diferencia_mod2b)
 
@@ -242,7 +451,7 @@ Diferencia_mod2b<-data.frame(Diferencia_mod2b)
 set.seed(10101)
 
 
-modelo3_forestb <- ranger(
+modelo3_forestb <- randomForest(
   price ~ bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
   data = DTRAIN_H,
   num.trees = 5,
@@ -251,7 +460,7 @@ modelo3_forestb <- ranger(
 
 
 
-predicciones_mod3_rf_completob<-predict(modelo3_forestb, data = DTRAIN_H)$predictions
+predicciones_mod3_rf_completob<-predict(modelo3_forestb, data = DTRAIN_H)
 
 MSE_mod3b <- sqrt(mean((predicciones_mod3_rf_completob-DTRAIN_H$price)^2))
 Diferencia_mod3b <- (predicciones_mod3_rf_completob - DTRAIN_H$price)
@@ -313,7 +522,7 @@ modelo1c <- lm(price ~  bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+su
 predicciones_mod1c <- predict(modelo1c, newdata = DTRAIN_H)
 Diferencia_mod1c <- (predicciones_mod1c - DTRAIN_H$price)
 Diferencia_mod1c<-data.frame(Diferencia_mod1c)
-MSE_mod1c<- sqrt(mean((predicciones_mod1c - DTRAIN_H$price)^2))
+MSE_mod1c<- mean(sqrt((predicciones_mod1c - DTRAIN_H$price)^2))
 
 
 #Modelo 2b Lasso
@@ -349,7 +558,7 @@ modelo2_Lasso_fc <- glmnet(
 )
 
 predicciones_train_mod2_Lass_fc <- predict(modelo2_Lasso_fc, newx = x_trainc)
-MSE_mod2c <- sqrt(mean((predicciones_train_mod2_Lass_fc -y_trainc)^2))
+MSE_mod2c <- mean(sqrt((predicciones_train_mod2_Lass_fc -y_trainc)^2))
 Diferencia_mod2c <- (predicciones_train_mod2_Lass_fc - DTRAIN_H$price)
 Diferencia_mod2c<-data.frame(Diferencia_mod2c)
 
@@ -358,7 +567,7 @@ Diferencia_mod2c<-data.frame(Diferencia_mod2c)
 set.seed(10101)
 
 
-modelo3_forestc <- ranger(
+modelo3_forestc <- randomForest(
   price ~ bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+surface_new_3,
   data = DTRAIN_H,
   num.trees = 5,
@@ -367,7 +576,7 @@ modelo3_forestc <- ranger(
 
 
 
-predicciones_mod3_rf_completoc<-predict(modelo3_forestc, data = DTRAIN_H)$predictions
+predicciones_mod3_rf_completoc<-predict(modelo3_forestc, data = DTRAIN_H)
 
 MSE_mod3c <- sqrt(mean((predicciones_mod3_rf_completoc-DTRAIN_H$price)^2))
 Diferencia_mod3c <- (predicciones_mod3_rf_completoc - DTRAIN_H$price)
@@ -419,64 +628,38 @@ view(Precio_tot_mod4c)
 Zeros_mod4c<-ifelse(Precio_compra_mod4c==0,TRUE, FALSE)
 table(Zeros_mod4c) #La cantidad de falsos (diferente de cero) son las propiedades compradas
 
-#===========================================================================================
-#Gráfica de MSE- para apéndice (utilizando las 10 variables)
 
-RMSE_modelos<-c(MSE_mod1a, MSE_mod2, MSE_mod3, MSE_mod4)
+#===========================================================================================
+#Gráfica de MSE- para apéndice
+
+sqrt_MSE_modelos<-c(MSE_mod1a, MSE_mod2, MSE_mod3, MSE_mod4)
 modelos_<-c('modelo1_10var','modelo2_10var', 'modelo3_10var', 'modelo4_10var')
-RMSE_errores<-data.frame(modelos_,RMSE_modelos)
+sqrt_MSE_errores<-data.frame(modelos_,sqrt_MSE_modelos)
 
 #Se grafica el resultado
-ggplot(data=RMSE_errores, aes(x = modelos_, y = RMSE_modelos, group=1)) + 
-  geom_line()+   geom_point()+  labs(title = "Comparación diferentes modelos en términos de RMSE") 
-
-#===========================================================================================
-#Se entrena el modelo 3 con las 10 variables. Se realizaron varias iteraciones y se determinó que el número de árboles con el que se obtiene el menor RMSE es 1000, así como menor valor y mayor cantidad de viviendas compradas.
-
-
-
-set.seed(10101)
-modelo3_forest1000 <- ranger(
-  price ~ Medellin + Apto + parqueaderoT + ascensorT + bathrooms+habitaciones+min_dist_bar_+min_dist_transp_+min_dist_park+surface_new_3,
-  data = DTRAIN_H,
-  num.trees = 1000,
-  write.forest = TRUE
-)
-
-predicciones_mod3_rf_completo1000<-predict(modelo3_forest1000, data = DTRAIN_H)$predictions
-
-MSE_mod31000 <- sqrt(mean((predicciones_mod3_rf_completo1000-DTRAIN_H$price)^2))
-Diferencia_mod31000 <- (predicciones_mod3_rf_completo1000 - DTRAIN_H$price)
-Diferencia_mod31000<-data.frame(Diferencia_mod31000)
-
-Precio_compra_mod31000<-ifelse(Diferencia_mod31000<=-40000000,0, predicciones_mod3_rf_completo1000  )
-Precio_compra_mod31000<-data.frame(Precio_compra_mod31000)
-Precio_tot_mod31000<-colSums(Precio_compra_mod31000)
-view(Precio_tot_mod31000)
-Zeros_mod31000<-ifelse(Precio_compra_mod31000==0,TRUE, FALSE)
-table(Zeros_mod31000)#La cantidad de falsos (diferente de cero) son las propiedades compradas
+ggplot(data=sqrt_MSE_errores, aes(x = modelos_, y = sqrt_MSE_modelos, group=1)) + 
+  geom_line()+   geom_point()+  labs(title = "Comparación diferentes modelos en términos de sqrt_MSE") 
 
 #=====================================
 #De acuerdo a la comparación de los 12 modelos, el modelo modelo3_forest con 10 variables explicativas es el cual tiene la mejor proporción de dinero invertido/viviendas comparas. 
 #Por lo tanto, Se realiza la predicción con el modelo modelo3_forest en la base DTEST_H 
-
-Predicciones_PreciosViv <- predict(modelo3_forest1000,  data = DTEST_H)$predictions #Se realiza predicción sobre la base Test con el modelo RF de 1000 árboles
+Predicciones_PreciosViv <- predict(modelo3_forest,  newdata = DTEST_H)
 Predicciones_PreciosViv <- data.frame (Predicciones_PreciosViv)
 View(Predicciones_PreciosViv)
 Predicciones_PreciosViv <- cbind(DTEST_H$property_id ,Predicciones_PreciosViv)
 View(Predicciones_PreciosViv)
 View(cbind(DTEST_H$property_id, Predicciones_PreciosViv$`DTEST_H$property_id`))
 
-summary(Predicciones_PreciosViv)
-colnames(Predicciones_PreciosViv) <- c('property_id','price') #Se renombran las columnas
+colnames(Predicciones_PreciosViv) <- c('property_id','price')
 
-
-Property_id_or<-DTEST$property_id #Se importa el id con el orden original de la base Test entregada por Ignacio
+Property_id_or<-DTEST$property_id
 Property_id_or<- data.frame (Property_id_or)
-colnames(Property_id_or) <- c('property_id') #Se renombran las columnas
+colnames(Property_id_or) <- c('property_id','price')
+Predicciones_PreciosViv <- cbind(Predicciones_PreciosViv, Property_id_or)
+rm (Predicciones_PreciosViv)
 
-Property_id_or<-left_join(Property_id_or, Predicciones_PreciosViv, by="property_id" ) #Se hace left join para que los resultados queden con el mismo orden de la base test original
-colnames(Property_id_or) <- c('property_id','price') #Se renombran las columnas
+Property_id_or<-left_join(Property_id_or, Predicciones_PreciosViv, by="property_id" )
 
-saveRDS(Property_id_or, "../Elementos_Guardados/_Predicciones_.rds") #Se guarda por control
-write.csv (Property_id_or, "../Elementos_Guardados/predictions_beleño_gaona.csv") #Submission file
+colnames(Property_id_or) <- c('property_id','price')
+saveRDS(Property_id_or, "../Elementos_Guardados/Predicciones.rds")
+write.csv (Property_id_or, "../Elementos_Guardados/predictions_beleno_gaona.csv")
