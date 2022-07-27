@@ -59,7 +59,7 @@ DTEST<-data.frame(readRDS("../Elementos_Guardados/test.rds")) #Se importa el arc
 
 
 
-#Se realizarán xx modelos para realizar las predicciones del precio de las viviendas, el modelo con menor MSE será con el cual se realizará la predicción en la base Test
+#Se realizarán 12 modelos para realizar las predicciones del precio de las viviendas, el modelo con menor MSE será con el cual se realizará la predicción en la base Test
 
 #Modelo OLS
 
